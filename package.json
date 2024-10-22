@@ -19,7 +19,7 @@
     "express": "^4.21.1",
     "jszip": "^3.10.1",
     "node-fetch": "^3.3.2",
-    "puppeteer": "^20.9.0",
+    "puppeteer": "^23.6.0",
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "uuid": "^10.0.0"
@@ -27,5 +27,4 @@
   "engines": {
     "node": ">=19.0.1"
   }
-
 }
