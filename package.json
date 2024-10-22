@@ -23,5 +23,9 @@
     "puppeteer-extra": "^3.3.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "uuid": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=19.0.1"
   }
+
 }
