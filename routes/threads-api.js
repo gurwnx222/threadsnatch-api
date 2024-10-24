@@ -126,6 +126,8 @@ router.get("/fetch-vid", async (req, res) => {
       args: ["--no-sandbox", "--disable-setuid-sandbox", "--single-process", "--no-zygote"],
       executablePath: process.env.NODE_ENV === "production" ? process.env.PUPPETEER_EXECUTABLE_PATH : puppeteer.executablePath(),
   });
+      const browserPath = puppeteer.executablePath();
+  console.log('Chromium browser path:', browserPath);
       const page = await browser.newPage();
       await page.goto(postUrl);
 await page.setRequestInterception(true);
