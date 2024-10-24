@@ -8,8 +8,6 @@ import axios from "axios";
 import { downloadImage, downloadVideo } from "../threadSaver/threads-download.js";
 import { v4 as uuidv4 } from 'uuid';
 import JSZip from 'jszip';
-import { exec } from "node:child_process"
-import { promisify } from "node:util"
 import dotenv from "dotenv";
 dotenv.config();
 
@@ -123,13 +121,10 @@ router.get("/fetch-vid", async (req, res) => {
 
   async function main() {
     try {
-
-const { stdout: chromiumPath } = await promisify(exec)("which chromium")
-
   const browser = await puppeteer.launch({
     headless: "new",
       args: ["--no-sandbox", "--disable-setuid-sandbox", "--single-process", "--no-zygote"],
-      executablePath: process.env.NODE_ENV === "production" ? process.env.PUPPETEER_EXECUTABLE_PATH : chromiumPath.trim(),
+      executablePath: process.env.NODE_ENV === "production" ? process.env.PUPPETEER_EXECUTABLE_PATH : puppeteer.executablePath(),
   });
       const page = await browser.newPage();
       await page.goto(postUrl);
@@ -240,12 +235,10 @@ router.get("/fetch-crsel-media", async (req, res) => {
 
   async function main() {
     try {
-      const { stdout: chromiumPath } = await promisify(exec)("which chromium");
-
       const browser = await puppeteer.launch({
         headless: "new",
           args: ["--no-sandbox", "--disable-setuid-sandbox", "--single-process", "--no-zygote"],
-          executablePath: process.env.NODE_ENV === "production" ? process.env.PUPPETEER_EXECUTABLE_PATH : chromiumPath.trim(),
+          executablePath: process.env.NODE_ENV === "production" ? process.env.PUPPETEER_EXECUTABLE_PATH : puppeteer.executablePath(),
       });
 
       const page = await browser.newPage();
