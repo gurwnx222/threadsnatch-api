@@ -26,26 +26,29 @@ const __dirname = path.dirname(new URL(import.meta.url).pathname);
 router.get("/fetch-img", async (req, res) => {
   const postUrl = req.query.q;
   const directoryPath = "./threadsRes/";
-  
+
   if (!postUrl || !postUrl.includes('https://www.threads.net/')) {
     return res.status(400).send('Invalid Threads URL. Please provide a valid URL.');
   }
-  
+
   try {
     // Fetch HTML content using Axios
     const response = await axios.get(postUrl);
     const body = response.data;
     const $ = load(body);
+    
     const ogImageUrl = $('meta[property="og:image"]').attr("content");
-const postTitle =  $('meta[property="og:title"]').attr("content");
-const postDescription = $('meta[property="og:description"]').attr("content");
-const postAuthor = $('meta[property="article:author"]').attr("content");
+    const postTitle = $('meta[property="og:title"]').attr("content");
+    const postDescription = $('meta[property="og:description"]').attr("content");
+    const postAuthor = $('meta[property="article:author"]').attr("content");
+
     // Download and save the og:image
     const imageName = `image_${uuidv4()}`;
-    fetchedImageUUID = imageName; // Store the full image name
+    fetchedImageUUID = imageName; // Store the image name
     const imagePath = await downloadImage(ogImageUrl, imageName, directoryPath);
-// Sending JSON as a response
-        const jsonResponse = {
+
+    // Sending JSON as a response
+    const jsonResponse = {
       response: "200",
       message: "Image downloaded on server successfully!!",
       data: {
@@ -57,34 +60,37 @@ const postAuthor = $('meta[property="article:author"]').attr("content");
         imageData: {
           imageName: imageName,
           resolution: "HD",
-          imageSizeKB: (fs.statSync(imagePath).size / 1024).toFixed(2)+"kb", 
-          imageSizeMB: ((fs.statSync(imagePath).size / 1024) / 1024).toFixed(2)+"mb",
+          imageSizeKB: (fs.statSync(imagePath).size / 1024).toFixed(2) + "kb",
+          imageSizeMB: ((fs.statSync(imagePath).size / 1024) / 1024).toFixed(2) + "mb",
           imageUrl: ogImageUrl,
         },
       },
       downloadImage: {
         message: "You can Download Image from endpoint /download-img",
         url: `/download-img?q=${postUrl}`,
-      }
+      },
     };
-res.status(200).json(jsonResponse);
+
+    res.status(200).json(jsonResponse);
   } catch (error) {
     console.error(error);
     const errResponse = {
       response: "500",
       message: "An error occurred while fetching the image.",
       error: error.message,
-    }
+    };
     res.status(500).json(errResponse);
   }
 });
 
 router.get('/download-img', (req, res) => {
   const postUrl = req.query.q;
+
   if (!fetchedImageUUID) {
     return res.status(400).json({ error: 'No image has been fetched.' });
   }
-  const imagePath = `./threadsRes/${fetchedImageUUID}.jpg`; // Use the full image name
+
+  const imagePath = `./threadsRes/${fetchedImageUUID}.jpg`; // Use the image name
 
   res.set({
     'Content-Type': 'image/jpeg',
@@ -121,50 +127,52 @@ router.get("/fetch-vid", async (req, res) => {
 
   async function main() {
     try {
-  const browser = await puppeteer.launch({
-    args: [
-      "--disable-setuid-sandbox",
-      "--no-sandbox",
-      "--single-process",
-      "--no-zygote",
-      "--disable-gpu",
-      "--disable-dev-shm-usage",
-    ],
-    executablePath:
-      process.env.NODE_ENV === "production"
-        ? process.env.PUPPETEER_EXECUTABLE_PATH
-        : puppeteer.executablePath(),
-    headless: true,
-  });
-      
+      const browser = await puppeteer.launch({
+        args: [
+          "--disable-setuid-sandbox",
+          "--no-sandbox",
+          "--single-process",
+          "--no-zygote",
+          "--disable-gpu",
+          "--disable-dev-shm-usage",
+        ],
+        executablePath:
+          process.env.NODE_ENV === "production"
+            ? process.env.PUPPETEER_EXECUTABLE_PATH
+            : puppeteer.executablePath(),
+        headless: "new",
+      });
+
       const page = await browser.newPage();
       await page.goto(postUrl);
-await page.setRequestInterception(true);
-  page.on("request", (req) => {
-    const resourceType = req.resourceType();
-    if (resourceType === "stylesheet") {
-      req.abort();
-      console.log(`Blocked ${resourceType}`);
-    } else {
-      req.continue();
-    }
-  });
-      // Extract metadata using Puppeteer
+      await page.setRequestInterception(true);
+
+      page.on("request", (req) => {
+        const resourceType = req.resourceType();
+        if (resourceType === "stylesheet") {
+          req.abort();
+          console.log(`Blocked ${resourceType}`);
+        } else {
+          req.continue();
+        }
+      });
+
       const metaTags = await page.evaluate(() => {
         return {
           ogImageUrl: document.querySelector('meta[property="og:image"]')?.getAttribute("content"),
           postTitle: document.querySelector('meta[property="og:title"]')?.getAttribute("content"),
           postDescription: document.querySelector('meta[property="og:description"]')?.getAttribute("content"),
-          postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content")
+          postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content"),
         };
       });
+
       await page.waitForSelector('.x1ja2u2z');
-      // Extract video URL from nested divs
       const nestedDivsHTML = await page.evaluate(() => {
         const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
         return nestedDivs.map(div => ({ content: div.innerHTML }));
       });
-      const vidNestedDivContent = nestedDivsHTML[15].content; // Adjust the index as needed
+
+      const vidNestedDivContent = nestedDivsHTML[15].content;
       const $ = load(vidNestedDivContent);
       const videoUrl = $('video').attr('src');
       const videoName = `video_${uuidv4()}`;
@@ -173,7 +181,6 @@ await page.setRequestInterception(true);
 
       await downloadVideo(videoUrl, videoName, directoryPath);
 
-      // Prepare the JSON response
       const jsonResponse = {
         response: "200",
         message: "Video downloaded on server successfully!!",
@@ -192,7 +199,7 @@ await page.setRequestInterception(true);
         downloadVideo: {
           message: "You can Download Video from endpoint /download-vid",
           url: `/download-vid?q=${postUrl}`,
-        }
+        },
       };
 
       res.status(200).json(jsonResponse);
@@ -215,15 +222,18 @@ router.get('/download-vid', async (req, res) => {
   if (!fetchedVideoUUID) {
     return res.status(400).json({ error: 'No video has been fetched.' });
   }
-  const videoPath = `./threadsRes/vid_media/${fetchedVideoUUID}.mp4`; // Use the full video name
+
+  const videoPath = `./threadsRes/vid_media/${fetchedVideoUUID}.mp4`;
+  const fileSize = fs.statSync(videoPath).size;
 
   res.set({
     'Content-Type': 'video/mp4',
-    'Content-Disposition': `attachment; filename="${fetchedVideoUUID}.mp4"`,
+    'Content-Disposition': 'attachment',
+    'Content-Length': `${fileSize}`,
+    'filename': `${fetchedVideoUUID}.mp4`,
   });
 
   const vidStream = fs.createReadStream(videoPath);
-
   vidStream.pipe(res);
 
   vidStream.on('close', () => {
@@ -247,9 +257,19 @@ router.get("/fetch-crsel-media", async (req, res) => {
   async function main() {
     try {
       const browser = await puppeteer.launch({
+        args: [
+          "--disable-setuid-sandbox",
+          "--no-sandbox",
+          "--single-process",
+          "--no-zygote",
+          "--disable-gpu",
+          "--disable-dev-shm-usage",
+        ],
+        executablePath:
+          process.env.NODE_ENV === "production"
+            ? process.env.PUPPETEER_EXECUTABLE_PATH
+            : puppeteer.executablePath(),
         headless: "new",
-          args: ["--no-sandbox", "--disable-setuid-sandbox", "--single-process", "--no-zygote"],
-          executablePath: process.env.NODE_ENV === "production" ? process.env.PUPPETEER_EXECUTABLE_PATH : puppeteer.executablePath(),
       });
 
       const page = await browser.newPage();
@@ -272,19 +292,20 @@ router.get("/fetch-crsel-media", async (req, res) => {
         return {
           postTitle: document.querySelector('meta[property="og:title"]')?.getAttribute("content"),
           postDescription: document.querySelector('meta[property="og:description"]')?.getAttribute("content"),
-          postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content")
+          postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content"),
         };
       });
+
       // Wait for the dynamic div to load
       await page.waitForSelector('div[id^="mount_0_"]');
-await page.waitForTimeout(2000);
+      await page.waitForTimeout(2000);
+
       // Get the HTML of the entire page
       const pageHTML = await page.content();
       const $ = load(pageHTML);
 
       // Find the specific div containing the images
-      const targetDiv = $(
-        '.x1xmf6yo').first(); // Use `.first()` to limit to the first matching div
+      const targetDiv = $('.x1xmf6yo').first(); // Use `.first()` to limit to the first matching div
 
       if (!targetDiv.length) {
         throw new Error("Target div not found.");
@@ -318,6 +339,7 @@ await page.waitForTimeout(2000);
       if (desiredImages.length === 0) {
         console.log("No valid 720w images found.");
       }
+
       // Zip the images
       const zip = new JSZip();
       try {
@@ -328,7 +350,7 @@ await page.waitForTimeout(2000);
         }));
 
         const zipFilePath = `./threadsRes/crsel_media/crsel_media_${uuidv4()}.zip`;
-        fetchedCrselUUID = zipFilePath
+        fetchedCrselUUID = zipFilePath; // Store the file path globally for download access
         const content = await zip.generateAsync({ type: "nodebuffer" });
         fs.writeFileSync(zipFilePath, content);
         console.log('Zip file created successfully!');
@@ -363,7 +385,7 @@ await page.waitForTimeout(2000);
         res.status(500).json({
           response: "500",
           message: "Failed to download and zip carousel images.",
-          error: err.message
+          error: err.message,
         });
       }
 
@@ -384,14 +406,16 @@ await page.waitForTimeout(2000);
 router.get('/download-crsel-media', (req, res) => {
   const postUrl = req.query.q;
   const zipFilePath = fetchedCrselUUID;
-  
+
   if (!zipFilePath) {
     return res.status(400).json({ error: 'No carousel images have been fetched.' });
   }
-
+const fileSize = fs.statSync(zipFilePath).size;
   res.set({
     'Content-Type': 'application/zip',
-    'Content-Disposition': `attachment; filename="${path.basename(zipFilePath)}"`,
+    'Content-Disposition': 'attachment',
+'filename':`${path.basename(zipFilePath)}`,
+    'Content-Length': `${fileSize}`
   });
 
   const zipStream = fs.createReadStream(zipFilePath);
@@ -414,4 +438,5 @@ router.get('/download-crsel-media', (req, res) => {
     res.status(500).json({ error: 'Error streaming zip file.' });
   });
 });
+
 export default router
