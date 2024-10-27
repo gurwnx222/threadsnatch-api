@@ -154,7 +154,7 @@ router.get("/fetch-vid", async (req, res) => {
           req.continue();
         }
       });
-      await page.waitForSelector('.x1ja2u2z', { timeout: 5000 }).catch(() => {
+      await page.waitForSelector('.x1ja2u2z', { timeout: 10000 }).catch(() => {
   throw new Error("Video container not found.");
 });
 
