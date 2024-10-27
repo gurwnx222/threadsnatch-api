@@ -1,7 +1,5 @@
 FROM node:19.1.0
 
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \ PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
-
 RUN apt-get update && apt-get install -y gnupg wget && \
     wget -q -O- https://dl-ssl.google.com/linux/linux_signing_key.pub | \
     gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \

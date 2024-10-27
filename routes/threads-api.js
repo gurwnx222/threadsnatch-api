@@ -135,12 +135,13 @@ router.get("/fetch-vid", async (req, res) => {
           "--no-zygote",
           "--disable-gpu",
           "--disable-dev-shm-usage",
+          "--disable-background-timer-throttling",
         ],
         executablePath:
           process.env.NODE_ENV === "production"
             ? process.env.PUPPETEER_EXECUTABLE_PATH
             : puppeteer.executablePath(),
-        headless: "new",
+        headless: true,
       });
 
       const page = await browser.newPage();
@@ -166,7 +167,10 @@ router.get("/fetch-vid", async (req, res) => {
         };
       });
 
-      await page.waitForSelector('.x1ja2u2z');
+      await page.waitForSelector('.x1ja2u2z', { timeout: 10000 }).catch(() => {
+  throw new Error("Video container not found.");
+});
+
       const nestedDivsHTML = await page.evaluate(() => {
         const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
         return nestedDivs.map(div => ({ content: div.innerHTML }));
@@ -202,8 +206,9 @@ router.get("/fetch-vid", async (req, res) => {
         },
       };
 
-      res.status(200).json(jsonResponse);
-      await browser.close();
+   await browser.close();   res.status(200).json(jsonResponse);
+      console.log(jsonResponse);
+      return;
     } catch (error) {
       console.error(error);
       const errResponse = {
@@ -230,7 +235,7 @@ router.get('/download-vid', async (req, res) => {
     'Content-Type': 'video/mp4',
     'Content-Disposition': 'attachment',
     'Content-Length': `${fileSize}`,
-    'filename': `${fetchedVideoUUID}.mp4`,
+    'filename': `threadsnatch-api_vid_${fetchedVideoUUID}.mp4`,
   });
 
   const vidStream = fs.createReadStream(videoPath);
