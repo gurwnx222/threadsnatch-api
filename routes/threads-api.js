@@ -198,9 +198,8 @@ router.get('/download-vid', async (req, res) => {
 
   res.set({
     'Content-Type': 'video/mp4',
-    'Content-Disposition': 'attachment',
+    'Content-Disposition': `attachment; filename="${fetchedVideoUUID}.mp4"`,
     'Content-Length': `${fileSize}`,
-    'filename': `threadsnatch-api_vid_${fetchedVideoUUID}.mp4`,
   });
 
   const vidStream = fs.createReadStream(videoPath);
