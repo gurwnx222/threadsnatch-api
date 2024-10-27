@@ -128,17 +128,20 @@ router.get("/fetch-vid", async (req, res) => {
   async function main() {
     try {
       const browser = await puppeteer.launch({
+        headless: "new",
         args: [
           "--disable-setuid-sandbox",
           "--no-sandbox",
           "--single-process",
           "--no-zygote",
+          "--disable-gpu",
+          "--disable-dev-shm-usage",
+          "--disable-background-timer-throttling",
         ],
         executablePath:
           process.env.NODE_ENV === "production"
             ? process.env.PUPPETEER_EXECUTABLE_PATH
             : puppeteer.executablePath(),
-        headless: true,
       });
 
       const page = await browser.newPage();
@@ -154,6 +157,16 @@ router.get("/fetch-vid", async (req, res) => {
           req.continue();
         }
       });
+
+      const metaTags = await page.evaluate(() => {
+        return {
+          ogImageUrl: document.querySelector('meta[property="og:image"]')?.getAttribute("content"),
+          postTitle: document.querySelector('meta[property="og:title"]')?.getAttribute("content"),
+          postDescription: document.querySelector('meta[property="og:description"]')?.getAttribute("content"),
+          postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content"),
+        };
+      });
+
       await page.waitForSelector('.x1ja2u2z', { timeout: 10000 }).catch(() => {
   throw new Error("Video container not found.");
 });
@@ -172,8 +185,30 @@ router.get("/fetch-vid", async (req, res) => {
 
       await downloadVideo(videoUrl, videoName, directoryPath);
 
-   await browser.close();   res.status(200).send('Video file downloaded!!');
-      return;
+      const jsonResponse = {
+        response: "200",
+        message: "Video downloaded on server successfully!!",
+        data: {
+          postData: {
+            postTitle: metaTags.postTitle,
+            postDescription: metaTags.postDescription,
+            postAuthor: metaTags.postAuthor,
+          },
+          videoData: {
+            videoName: videoName,
+            resolution: "HD",
+            videoUrl: videoUrl,
+          },
+        },
+        downloadVideo: {
+          message: "You can Download Video from endpoint /download-vid",
+          url: `/download-vid?q=${postUrl}`,
+        },
+      };
+
+    browser.close();   res.status(200).json(jsonResponse);
+      console.log(jsonResponse);
+      return
     } catch (error) {
       console.error(error);
       const errResponse = {
@@ -198,8 +233,9 @@ router.get('/download-vid', async (req, res) => {
 
   res.set({
     'Content-Type': 'video/mp4',
-    'Content-Disposition': `attachment; filename="${fetchedVideoUUID}.mp4"`,
+    'Content-Disposition': 'attachment',
     'Content-Length': `${fileSize}`,
+    'filename': `threadsnatch-api_vid_${fetchedVideoUUID}.mp4`,
   });
 
   const vidStream = fs.createReadStream(videoPath);
