@@ -173,12 +173,10 @@ console.log('meta Tags', metaTags);
         const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
         return nestedDivs.map(div => ({ content: div.innerHTML }));
       });
-console.log('nestedDivsHTMLData:', nestedDivsHTML);
+
       const vidNestedDivContent = nestedDivsHTML[17].content;
-      console.log('Video Nested Div Content', vidNestedDivContent);
       const $ = load(vidNestedDivContent);
       const videoUrl = $('video').attr('src');
-      console.log('Video URL', videoUrl);
       const videoName = `video_${uuidv4()}`;
       console.log('video name:', videoName);
       fetchedVideoUUID = videoName;
@@ -235,7 +233,7 @@ router.get('/download-vid', async (req, res) => {
     'Content-Type': 'video/mp4',
     'Content-Disposition': 'attachment',
     'Content-Length': `${fileSize}`,
-    'filename': `threadsnatch-api_vid_${fetchedVideoUUID}.mp4`,
+    'filename': `"threadsnatch-api_vid_${fetchedVideoUUID}.mp4"`,
   });
 
   const vidStream = fs.createReadStream(videoPath);
