@@ -166,19 +166,19 @@ router.get("/fetch-vid", async (req, res) => {
           postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content"),
         };
       });
-
-      await page.waitForSelector('.x1ja2u2z', { timeout: 10000 }).catch(() => {
-  throw new Error("Video container not found.");
-});
+console.log('meta Tags', metaTags);
+      await page.waitForSelector('.x1ja2u2z')
 
       const nestedDivsHTML = await page.evaluate(() => {
         const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
         return nestedDivs.map(div => ({ content: div.innerHTML }));
       });
-
+console.log('nestedDivsHTMLData:', nestedDivsHTML);
       const vidNestedDivContent = nestedDivsHTML[17].content;
+      console.log('Video Nested Div Content', vidNestedDivContent);
       const $ = load(vidNestedDivContent);
       const videoUrl = $('video').attr('src');
+      console.log('Video URL', videoUrl);
       const videoName = `video_${uuidv4()}`;
       console.log('video name:', videoName);
       fetchedVideoUUID = videoName;
