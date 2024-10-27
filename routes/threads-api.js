@@ -176,7 +176,7 @@ router.get("/fetch-vid", async (req, res) => {
         return nestedDivs.map(div => ({ content: div.innerHTML }));
       });
 
-      const vidNestedDivContent = nestedDivsHTML[15].content;
+      const vidNestedDivContent = nestedDivsHTML[17].content;
       const $ = load(vidNestedDivContent);
       const videoUrl = $('video').attr('src');
       const videoName = `video_${uuidv4()}`;
