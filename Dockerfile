@@ -1,4 +1,4 @@
-FROM node:19.1.0-alpine3.17
+FROM node:19-alpine
 
 # Install necessary dependencies
 RUN apk add --no-cache \
