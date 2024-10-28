@@ -1,23 +1,33 @@
-FROM node:19.1.0
+FROM node:19.1.0-alpine3.17
 
-RUN apt-get update && apt-get install -y gnupg wget && \
-    wget -q -O- https://dl-ssl.google.com/linux/linux_signing_key.pub | \
-    gpg --dearmor > /etc/apt/trusted.gpg.d/google-archive.gpg && \
-    sh -c 'echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" > /etc/apt/sources.list.d/google.list' && \
-    apt-get update && \
-    apt-get install -y google-chrome-stable --no-install-recommends && \
-    rm -rf /var/lib/apt/lists/*
+# Install necessary dependencies
+RUN apk add --no-cache \
+    chromium \
+    nss \
+    freetype \
+    harfbuzz \
+    ca-certificates \
+    ttf-freefont \
+    bash \
+    curl \
+    libc6-compat \
+    udev
 
+# Set up working directory
 WORKDIR /usr/src/app
 
+# Copy package.json and install only production dependencies
 COPY package*.json ./
+RUN npm ci --only=production
 
-USER root
-
-RUN npm ci
-
+# Copy application code
 COPY . .
 
+# Expose port
 EXPOSE 8080
 
+# Puppeteer expects a path to Chrome in Alpine
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+
+# Run the application
 CMD ["node", "index.js"]
