@@ -178,11 +178,9 @@ console.log('meta Tags', metaTags);
   });
 
  const nestedVidTagDiv = nestedDivsHTML[0].content;
-  if (nestedVidTagDiv) {
       const $ = load(nestedVidTagDiv);
       const videoUrl = $('video').attr('src');
       console.log(`Found video`, videoUrl);
-  }
       const videoName = `video_${uuidv4()}`;
       console.log('video name:', videoName);
       fetchedVideoUUID = videoName;
