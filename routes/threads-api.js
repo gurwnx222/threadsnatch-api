@@ -136,7 +136,6 @@ router.get("/fetch-vid", async (req, res) => {
           "--no-zygote",
           "--disable-gpu",
           "--disable-dev-shm-usage",
-          "--disable-background-timer-throttling",
         ],
         executablePath:
           process.env.NODE_ENV === "production"
@@ -175,8 +174,10 @@ console.log('meta Tags', metaTags);
       });
 
       const vidNestedDivContent = nestedDivsHTML[17].content;
+      console.log("vidNestedDivData", vidNestedDivContent);
       const $ = load(vidNestedDivContent);
       const videoUrl = $('video').attr('src');
+      console.log("videoUrl", videoUrl);
       const videoName = `video_${uuidv4()}`;
       console.log('video name:', videoName);
       fetchedVideoUUID = videoName;
