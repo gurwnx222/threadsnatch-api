@@ -169,15 +169,20 @@ console.log('meta Tags', metaTags);
       await page.waitForSelector('.x1ja2u2z')
 
       const nestedDivsHTML = await page.evaluate(() => {
-        const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
-        return nestedDivs.map(div => ({ content: div.innerHTML }));
-      });
+    // Get all divs with class 'x1ja2u2z'
+    const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
+    // Filter divs to find those containing 'x1xmf6yo' as an inner div
+    const targetDivs = nestedDivs.filter(div => div.querySelector('.x1xmf6yo'));
+    // Return the HTML of the filtered divs
+    return targetDivs.map(div => ({ content: div.innerHTML }));
+  });
 
-      const vidNestedDivContent = nestedDivsHTML[17].content;
-      console.log("vidNestedDivData", vidNestedDivContent);
-      const $ = load(vidNestedDivContent);
+ const nestedVidTagDiv = nestedDivsHTML[0].content;
+  if (nestedVidTagDiv) {
+      const $ = load(nestedVidTagDiv);
       const videoUrl = $('video').attr('src');
-      console.log("videoUrl", videoUrl);
+      console.log(`Found video`, videoUrl);
+  }
       const videoName = `video_${uuidv4()}`;
       console.log('video name:', videoName);
       fetchedVideoUUID = videoName;
