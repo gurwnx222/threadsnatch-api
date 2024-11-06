@@ -121,8 +121,8 @@ router.get("/fetch-vid", async (req, res) => {
   const postUrl = req.query.q;
   const directoryPath = "./threadsRes/vid_media/";
 
-  if (!postUrl || !postUrl.includes('https://www.threads.net/')) {
-    return res.status(400).send('Invalid Threads URL. Please provide a valid URL.');
+  if (!postUrl || !postUrl.includes("https://www.threads.net/")) {
+    return res.status(400).send("Invalid Threads URL. Please provide a valid URL.");
   }
 
   async function main() {
@@ -144,50 +144,54 @@ router.get("/fetch-vid", async (req, res) => {
       });
 
       const page = await browser.newPage();
-      await page.goto(postUrl);
-      await page.setRequestInterception(true);
 
+      // Set request interception to block unnecessary resources
+      await page.setRequestInterception(true);
       page.on("request", (req) => {
         const resourceType = req.resourceType();
-        if (resourceType === "stylesheet") {
+        if (["stylesheet", "image", "font"].includes(resourceType)) {
           req.abort();
-          console.log(`Blocked ${resourceType}`);
         } else {
           req.continue();
         }
       });
 
-      const metaTags = await page.evaluate(() => {
-        return {
-          ogImageUrl: document.querySelector('meta[property="og:image"]')?.getAttribute("content"),
-          postTitle: document.querySelector('meta[property="og:title"]')?.getAttribute("content"),
-          postDescription: document.querySelector('meta[property="og:description"]')?.getAttribute("content"),
-          postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content"),
-        };
-      });
-      await page.waitForSelector('.x1ja2u2z')
+      // Go to the post URL with reduced timeout
+      await page.goto(postUrl, { waitUntil: "domcontentloaded", timeout: 10000 });
+
+      // Extract metadata and HTML elements
+      const metaTags = await page.evaluate(() => ({
+        ogImageUrl: document.querySelector('meta[property="og:image"]')?.getAttribute("content"),
+        postTitle: document.querySelector('meta[property="og:title"]')?.getAttribute("content"),
+        postDescription: document.querySelector('meta[property="og:description"]')?.getAttribute("content"),
+        postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content"),
+      }));
+
+      // Wait for the required selector with a specific timeout
+      await page.waitForSelector(".x1ja2u2z", { timeout: 5000 });
+      
+      // Filter and retrieve HTML content
       const nestedDivsHTML = await page.evaluate(() => {
-    // Get all divs with class 'x1ja2u2z'
-    const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
-    // Filter divs to find those containing 'x1xmf6yo' as an inner div
-    const targetDivs = nestedDivs.filter(div => div.querySelector('.x1xmf6yo'));
-    // Return the HTML of the filtered divs
-    return targetDivs.map(div => ({ content: div.innerHTML }));
-  });
+        const nestedDivs = Array.from(document.querySelectorAll(".x1ja2u2z"));
+        const targetDivs = nestedDivs.filter((div) => div.querySelector(".x1xmf6yo"));
+        return targetDivs.map((div) => ({ content: div.innerHTML }));
+      });
 
- const nestedVidTagDiv = nestedDivsHTML[0].content;
+      // Extract the video URL from the innerHTML
+      const nestedVidTagDiv = nestedDivsHTML[0]?.content;
+      if (!nestedVidTagDiv) throw new Error("Video not found");
+
       const $ = load(nestedVidTagDiv);
-      const videoUrl = $('video').attr('src');
-      console.log(`Found video`, videoUrl);
-      const videoName = `video_${uuidv4()}`;
-      console.log('video name:', videoName);
-      fetchedVideoUUID = videoName;
+      const videoUrl = $("video").attr("src");
+      if (!videoUrl) throw new Error("Video URL missing");
 
+      const videoName = `video_${uuidv4()}`;
       await downloadVideo(videoUrl, videoName, directoryPath);
 
+      // Prepare the JSON response
       const jsonResponse = {
         response: "200",
-        message: "Video downloaded on server successfully!!",
+        message: "Video downloaded on server successfully!",
         data: {
           postData: {
             postTitle: metaTags.postTitle,
@@ -201,27 +205,26 @@ router.get("/fetch-vid", async (req, res) => {
           },
         },
         downloadVideo: {
-          message: "You can Download Video from endpoint /download-vid",
+          message: "You can download the video from endpoint /download-vid",
           url: `/download-vid?q=${postUrl}`,
         },
       };
 
-    browser.close();   res.status(200).json(jsonResponse);
-      console.log(jsonResponse);
-      return
+      await browser.close();
+      res.status(200).json(jsonResponse);
     } catch (error) {
       console.error(error);
-      const errResponse = {
+      res.status(500).json({
         response: "500",
         message: "An error occurred while fetching the video.",
         error: error.message,
-      };
-      res.status(500).json(errResponse);
+      });
     }
   }
 
   main();
 });
+
 
 router.get('/download-vid', async (req, res) => {
   if (!fetchedVideoUUID) {
