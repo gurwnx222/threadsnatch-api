@@ -165,9 +165,7 @@ router.get("/fetch-vid", async (req, res) => {
           postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content"),
         };
       });
-console.log('meta Tags', metaTags);
       await page.waitForSelector('.x1ja2u2z')
-
       const nestedDivsHTML = await page.evaluate(() => {
     // Get all divs with class 'x1ja2u2z'
     const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
@@ -237,7 +235,7 @@ router.get('/download-vid', async (req, res) => {
     'Content-Type': 'video/mp4',
     'Content-Disposition': 'attachment',
     'Content-Length': `${fileSize}`,
-    'filename': `"threadsnatch-api_vid_${fetchedVideoUUID}.mp4"`,
+    'filename': `${fetchedVideoUUID}.mp4`,
   });
 
   const vidStream = fs.createReadStream(videoPath);
@@ -264,6 +262,7 @@ router.get("/fetch-crsel-media", async (req, res) => {
   async function main() {
     try {
       const browser = await puppeteer.launch({
+        headless: "new",
         args: [
           "--disable-setuid-sandbox",
           "--no-sandbox",
@@ -276,7 +275,6 @@ router.get("/fetch-crsel-media", async (req, res) => {
           process.env.NODE_ENV === "production"
             ? process.env.PUPPETEER_EXECUTABLE_PATH
             : puppeteer.executablePath(),
-        headless: "new",
       });
 
       const page = await browser.newPage();
@@ -305,8 +303,6 @@ router.get("/fetch-crsel-media", async (req, res) => {
 
       // Wait for the dynamic div to load
       await page.waitForSelector('div[id^="mount_0_"]');
-      await page.waitForTimeout(2000);
-
       // Get the HTML of the entire page
       const pageHTML = await page.content();
       const $ = load(pageHTML);
