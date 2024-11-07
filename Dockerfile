@@ -1,33 +1,33 @@
-FROM node:19-alpine
+# Use Node.js 19 slim version as the base image
+FROM node:19-slim
 
-# Install necessary dependencies
-RUN apk add --no-cache \
+# Install Chromium and its dependencies
+RUN apt-get update && apt-get install -y \
     chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    bash \
-    curl \
-    libc6-compat \
-    udev
+    fonts-liberation \
+    libappindicator3-1 \
+    libasound2 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdbus-1-3 \
+    libxcomposite1 \
+    libxrandr2 \
+    xdg-utils \
+    --no-install-recommends && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Set up working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and install only production dependencies
+# Copy package.json and package-lock.json and install dependencies
 COPY package*.json ./
 RUN npm ci --only=production
 
 # Copy application code
 COPY . .
 
-# Expose port
+# Expose the application port
 EXPOSE 8080
-
-# Puppeteer expects a path to Chrome in Alpine
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
 
 # Run the application
 CMD ["node", "index.js"]

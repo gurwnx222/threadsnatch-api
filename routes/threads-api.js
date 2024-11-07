@@ -168,7 +168,7 @@ router.get("/fetch-vid", async (req, res) => {
       }));
 
       // Wait for the required selector with a specific timeout
-      await page.waitForSelector(".x1ja2u2z", { timeout: 5000 });
+      await page.waitForSelector(".x1ja2u2z");
       
       // Filter and retrieve HTML content
       const nestedDivsHTML = await page.evaluate(() => {
