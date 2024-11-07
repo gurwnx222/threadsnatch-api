@@ -209,9 +209,7 @@ router.get("/fetch-vid", async (req, res) => {
           url: `/download-vid?q=${postUrl}`,
         },
       };
-
-      await browser.close();
-      res.status(200).json(jsonResponse);
+      await browser.close()       res.status(200).json(jsonResponse);
     } catch (error) {
       console.error(error);
       res.status(500).json({
