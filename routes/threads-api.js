@@ -157,7 +157,7 @@ router.get("/fetch-vid", async (req, res) => {
       });
 
       // Go to the post URL with reduced timeout
-      await page.goto(postUrl, { waitUntil: "domcontentloaded", timeout: 10000 });
+      await page.goto(postUrl, { waitUntil: "domcontentloaded"op});
 
       // Extract metadata and HTML elements
       const metaTags = await page.evaluate(() => ({
@@ -183,7 +183,7 @@ router.get("/fetch-vid", async (req, res) => {
 
       const $ = load(nestedVidTagDiv);
       const videoUrl = $("video").attr("src");
-      if (!videoUrl) throw new Error("Video URL missing");
+      if (!videoUrl) throw new Error("Video URL missing", videoUrl);
 
       const videoName = `video_${uuidv4()}`;
       await downloadVideo(videoUrl, videoName, directoryPath);
