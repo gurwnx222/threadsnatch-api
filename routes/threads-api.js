@@ -157,7 +157,7 @@ router.get("/fetch-vid", async (req, res) => {
       });
 
       // Go to the post URL with reduced timeout
-      await page.goto(postUrl, { waitUntil: "domcontentloaded"op});
+      await page.goto(postUrl, { waitUntil: "domcontentloaded"});
 
       // Extract metadata and HTML elements
       const metaTags = await page.evaluate(() => ({
@@ -170,20 +170,21 @@ router.get("/fetch-vid", async (req, res) => {
       // Wait for the required selector with a specific timeout
       await page.waitForSelector(".x1ja2u2z");
       
-      // Filter and retrieve HTML content
       const nestedDivsHTML = await page.evaluate(() => {
-        const nestedDivs = Array.from(document.querySelectorAll(".x1ja2u2z"));
-        const targetDivs = nestedDivs.filter((div) => div.querySelector(".x1xmf6yo"));
-        return targetDivs.map((div) => ({ content: div.innerHTML }));
+        // Get all divs with class 'x1ja2u2z'
+        const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
+        // Filter divs to find those containing 'x1xmf6yo' as an inner div
+        const targetDivs = nestedDivs.filter(div => div.querySelector('.x1xmf6yo'));
+        // Return the HTML of the filtered divs
+        return targetDivs.map(div => ({ content: div.innerHTML }));
       });
 
-      // Extract the video URL from the innerHTML
       const nestedVidTagDiv = nestedDivsHTML[0]?.content;
-      if (!nestedVidTagDiv) throw new Error("Video not found");
-
-      const $ = load(nestedVidTagDiv);
-      const videoUrl = $("video").attr("src");
-      if (!videoUrl) throw new Error("Video URL missing", videoUrl);
+      if (nestedVidTagDiv) {
+          const $ = load(nestedVidTagDiv);
+          const videoUrl = $('video').attr('src');
+          console.log(`Found video`, videoUrl);
+      }
 
       const videoName = `video_${uuidv4()}`;
       await downloadVideo(videoUrl, videoName, directoryPath);
@@ -209,7 +210,7 @@ router.get("/fetch-vid", async (req, res) => {
           url: `/download-vid?q=${postUrl}`,
         },
       };
-      await browser.close()       
+      await browser.close()      
         res.status(200).json(jsonResponse);
     } catch (error) {
       console.error(error);
@@ -286,9 +287,8 @@ router.get("/fetch-crsel-media", async (req, res) => {
       await page.setRequestInterception(true);
       page.on("request", (req) => {
         const resourceType = req.resourceType();
-        if (resourceType === "stylesheet") {
+        if (["stylesheet", "image", "font"].includes(resourceType)) {
           req.abort();
-          console.log(`Blocked ${resourceType}`);
         } else {
           req.continue();
         }
