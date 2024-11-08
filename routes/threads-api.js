@@ -178,15 +178,17 @@ const nestedDivsHTML = await page.evaluate(() => {
     // Return the HTML of the filtered divs
     return targetDivs.map(div => ({ content: div.innerHTML }));
   });
-
+console.log(nestedDivsHTML);
  const nestedVidTagDiv = nestedDivsHTML[0]?.content;
+      console.log("nested vid Tag::",nestedVidTagDiv);
   if (nestedVidTagDiv) {
       const $ = load(nestedVidTagDiv);
       const videoUrl = $('video').attr('src');
       console.log(`Found video`, videoUrl);
+  }
       const videoName = `video_${uuidv4()}`;
       await downloadVideo(videoUrl, videoName, directoryPath);
-  }
+  
       // Prepare the JSON response
       const jsonResponse = {
         response: "200",
