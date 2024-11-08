@@ -170,25 +170,23 @@ router.get("/fetch-vid", async (req, res) => {
       // Wait for the required selector with a specific timeout
       await page.waitForSelector(".x1ja2u2z");
       
-      const nestedDivsHTML = await page.evaluate(() => {
-        // Get all divs with class 'x1ja2u2z'
-        const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
-        // Filter divs to find those containing 'x1xmf6yo' as an inner div
-        const targetDivs = nestedDivs.filter(div => div.querySelector('.x1xmf6yo'));
-        // Return the HTML of the filtered divs
-        return targetDivs.map(div => ({ content: div.innerHTML }));
-      });
+const nestedDivsHTML = await page.evaluate(() => {
+    // Get all divs with class 'x1ja2u2z'
+    const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
+    // Filter divs to find those containing 'x1xmf6yo' as an inner div
+    const targetDivs = nestedDivs.filter(div => div.querySelector('.x1xmf6yo'));
+    // Return the HTML of the filtered divs
+    return targetDivs.map(div => ({ content: div.innerHTML }));
+  });
 
-      const nestedVidTagDiv = nestedDivsHTML[0]?.content;
-      if (nestedVidTagDiv) {
-          const $ = load(nestedVidTagDiv);
-          const videoUrl = $('video').attr('src');
-          console.log(`Found video`, videoUrl);
-      }
-
+ const nestedVidTagDiv = nestedDivsHTML[0]?.content;
+  if (nestedVidTagDiv) {
+      const $ = load(nestedVidTagDiv);
+      const videoUrl = $('video').attr('src');
+      console.log(`Found video`, videoUrl);
       const videoName = `video_${uuidv4()}`;
       await downloadVideo(videoUrl, videoName, directoryPath);
-
+  }
       // Prepare the JSON response
       const jsonResponse = {
         response: "200",
