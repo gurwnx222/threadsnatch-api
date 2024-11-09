@@ -187,6 +187,8 @@ router.get("/fetch-vid", async (req, res) => {
           console.log(`Found video`, videoUrl);
       const videoName = `video_${uuidv4()}`;
       await downloadVideo(videoUrl, videoName, directoryPath);
+//close the browser
+  await browser.close()
       // Prepare the JSON response
       const jsonResponse = {
         response: "200",
@@ -208,9 +210,17 @@ router.get("/fetch-vid", async (req, res) => {
           url: `/download-vid?q=${postUrl}`,
         },
       };
+       res.status(200).json(jsonResponse);  
+    setTimeout(() => {
+    fs.unlink(videoPath, (error) => {
+      if (error) {
+        console.error('Error deleting video file:', error);
+      } else {
+        console.log('Video file deleted successfully!');
       }
-      await browser.close()      
-        res.status(200).json(jsonResponse);
+    });
+  }, 10000);
+        }
     } catch (error) {
       console.error(error);
       res.status(500).json({
