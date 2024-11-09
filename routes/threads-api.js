@@ -211,8 +211,9 @@ router.get("/fetch-vid", async (req, res) => {
           url: `/download-vid?q=${postUrl}`,
         },
       };
-       res.status(200).json(jsonResponse);  
-    setTimeout(() => {
+       res.status(200).json(jsonResponse);    
+      const videoPath = `./threadsRes/vid_media/${fetchedVideoUUID}.mp4`;
+      setTimeout(() => {
     fs.unlink(videoPath, (error) => {
       if (error) {
         console.error('Error deleting video file:', error);
@@ -221,8 +222,6 @@ router.get("/fetch-vid", async (req, res) => {
       }
     });
   }, 10000);
-        
-      
     } catch (error) {
       console.error(error);
       res.status(500).json({
