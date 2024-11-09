@@ -180,11 +180,12 @@ router.get("/fetch-vid", async (req, res) => {
         return targetDivs.map(div => ({ content: div.innerHTML }));
       });
 
-      const nestedVidTagDiv = nestedDivsHTML[1]?.content;
-      if (nestedVidTagDiv) {
-          const $ = load(nestedVidTagDiv);
+      const nestedVidTagDiv = nestedDivsHTML[1]?.content;    
+          const $ = load(nestedVidTagDiv);     
           const videoUrl = $('video').attr('src');
-          console.log(`Found video`, videoUrl);
+      if (!videoUrl) {
+        console.log("video not found"); 
+      }
       const videoName = `video_${uuidv4()}`;
       await downloadVideo(videoUrl, videoName, directoryPath);
 //close the browser
@@ -220,7 +221,8 @@ router.get("/fetch-vid", async (req, res) => {
       }
     });
   }, 10000);
-        }
+        
+      
     } catch (error) {
       console.error(error);
       res.status(500).json({
