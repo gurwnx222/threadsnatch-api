@@ -220,16 +220,6 @@ router.get("/fetch-vid", async (req, res) => {
       });
     }
   }
-  setTimeout(() => {
-    fs.unlink(videoPath, (error) => {
-      if (error) {
-        console.error('Error deleting video file:', error);
-      } else {
-        console.log('Video file deleted successfully!');
-      }
-    });
-  }, 10000); 
-  
   main();
 });
 
