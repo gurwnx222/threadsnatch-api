@@ -187,7 +187,6 @@ router.get("/fetch-vid", async (req, res) => {
           console.log(`Found video`, videoUrl);
       const videoName = `video_${uuidv4()}`;
       await downloadVideo(videoUrl, videoName, directoryPath);
-      }
       // Prepare the JSON response
       const jsonResponse = {
         response: "200",
@@ -209,6 +208,7 @@ router.get("/fetch-vid", async (req, res) => {
           url: `/download-vid?q=${postUrl}`,
         },
       };
+      }
       await browser.close()      
         res.status(200).json(jsonResponse);
     } catch (error) {
