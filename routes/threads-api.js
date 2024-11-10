@@ -187,7 +187,6 @@ router.get("/fetch-vid", async (req, res) => {
         console.log("video not found!"); 
       }
       const videoName = `video_${uuidv4()}`;
-      const fullVideoPath = `${directoryPath}${videoName}.mp4`;
       await downloadVideo(videoUrl, videoName, directoryPath);
 //close the browser
   await browser.close()
@@ -213,16 +212,6 @@ router.get("/fetch-vid", async (req, res) => {
         },
       };
        res.status(200).json(jsonResponse);    
-      const vidDeleteTime = 600000 / (1000 * 60); 
-      setTimeout(() => {
-    fs.unlink(fullVideoPath, (error) => {
-      if (error) {
-        console.error('Error deleting video file:', error);
-      } else {
-        console.log('Video file deleted successfully!');
-      }
-    });
-  }, vidDeleteTime);
     } catch (error) {
       console.error(error);
       res.status(500).json({
