@@ -187,6 +187,7 @@ router.get("/fetch-vid", async (req, res) => {
         console.log("video not found!"); 
       }
       const videoName = `video_${uuidv4()}`;
+      fetchedVideoUUID = videoName;
       await downloadVideo(videoUrl, videoName, directoryPath);
 //close the browser
   await browser.close()
@@ -223,7 +224,6 @@ router.get("/fetch-vid", async (req, res) => {
   }
   main();
 });
-
 
 router.get('/download-vid', async (req, res) => {
   if (!fetchedVideoUUID) {
