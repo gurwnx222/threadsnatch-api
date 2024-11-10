@@ -182,9 +182,9 @@ router.get("/fetch-vid", async (req, res) => {
 
       const nestedVidTagDiv = nestedDivsHTML[0]?.content;    
           const $ = load(nestedVidTagDiv);     
-          const videoUrl = $('video').attr('src');
+          const videoUrl = $('video').attr('src');     
       if (!videoUrl) {
-        console.log("video not found"); 
+        console.log("video not found!"); 
       }
       const videoName = `video_${uuidv4()}`;
       const fullVideoPath = `${directoryPath}${videoName}.mp4`;
@@ -213,7 +213,7 @@ router.get("/fetch-vid", async (req, res) => {
         },
       };
        res.status(200).json(jsonResponse);    
-      
+      const vidDeleteTime = 600000 / (1000 * 60); 
       setTimeout(() => {
     fs.unlink(fullVideoPath, (error) => {
       if (error) {
@@ -222,7 +222,7 @@ router.get("/fetch-vid", async (req, res) => {
         console.log('Video file deleted successfully!');
       }
     });
-  }, 20000);
+  }, vidDeleteTime);
     } catch (error) {
       console.error(error);
       res.status(500).json({
