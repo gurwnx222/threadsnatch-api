@@ -214,7 +214,7 @@ router.get("/fetch-vid", async (req, res) => {
         },
       };
        const vidDeleteTime = 600000 / (1000 * 60); 
-      setTimeout(() => {
+   await setTimeout(() => {
     fs.unlink(fullVideoPath, (error) => {
       if (error) {
         console.error('Error deleting video file:', error);
@@ -222,7 +222,7 @@ router.get("/fetch-vid", async (req, res) => {
         console.log('Video file deleted successfully!');
       }
     });
-  }, vidDeleteTime);
+  }, 20000);
       res.status(200).json(jsonResponse);    
     } catch (error) {
       console.error(error);
