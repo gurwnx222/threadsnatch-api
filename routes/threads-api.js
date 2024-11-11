@@ -22,7 +22,6 @@ let fetchedCrselUUID = null;
 // Get the directory path of the current module
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 
-//endpoints 
 router.get("/fetch-img", async (req, res) => {
   const postUrl = req.query.q;
   const directoryPath = "./threadsRes/";
@@ -45,7 +44,6 @@ router.get("/fetch-img", async (req, res) => {
     // Download and save the og:image
     const imageName = `image_${uuidv4()}`;
     fetchedImageUUID = imageName; // Store the image name
-    const fullImgPath = `${directoryPath}${fetchedImageUUID}.jpg`;
     const imagePath = await downloadImage(ogImageUrl, imageName, directoryPath);
 
     // Sending JSON as a response
@@ -71,16 +69,7 @@ router.get("/fetch-img", async (req, res) => {
         url: `/download-img?q=${postUrl}`,
       },
     };
-const imgDeleteTime = 300000 / (1000 * 60);
-   await setTimeout(() => {
-    fs.unlink(fullImgPath, (error) => {
-      if (error) {
-        console.error('Error deleting video file:', error);
-      } else {
-        console.log('Video file deleted successfully!');
-      }
-    });
-  }, imgDeleteTime);
+
     res.status(200).json(jsonResponse);
   } catch (error) {
     console.error(error);
