@@ -45,6 +45,7 @@ router.get("/fetch-img", async (req, res) => {
     // Download and save the og:image
     const imageName = `image_${uuidv4()}`;
     fetchedImageUUID = imageName; // Store the image name
+    const fullImgPath = `${directoryPath}${fetchedImageUUID}.jpg`;
     const imagePath = await downloadImage(ogImageUrl, imageName, directoryPath);
 
     // Sending JSON as a response
@@ -70,7 +71,16 @@ router.get("/fetch-img", async (req, res) => {
         url: `/download-img?q=${postUrl}`,
       },
     };
-
+const imgDeleteTime = 300000 / (1000 * 60);
+   await setTimeout(() => {
+    fs.unlink(fullImgPath, (error) => {
+      if (error) {
+        console.error('Error deleting video file:', error);
+      } else {
+        console.log('Video file deleted successfully!');
+      }
+    });
+  }, imgDeleteTime);
     res.status(200).json(jsonResponse);
   } catch (error) {
     console.error(error);
@@ -180,7 +190,7 @@ router.get("/fetch-vid", async (req, res) => {
         return targetDivs.map(div => ({ content: div.innerHTML }));
       });
 
-      const nestedVidTagDiv = nestedDivsHTML[1]?.content;    
+      const nestedVidTagDiv = nestedDivsHTML[0]?.content;    
           const $ = load(nestedVidTagDiv);     
           const videoUrl = $('video').attr('src');     
       if (!videoUrl) {
@@ -213,7 +223,7 @@ router.get("/fetch-vid", async (req, res) => {
           url: `/download-vid?q=${postUrl}`,
         },
       };
-       const vidDeleteTime = 600000 / (1000 * 60); 
+      const vidDeleteTime = 300000 / (1000 * 60);
    await setTimeout(() => {
     fs.unlink(fullVideoPath, (error) => {
       if (error) {
@@ -222,7 +232,7 @@ router.get("/fetch-vid", async (req, res) => {
         console.log('Video file deleted successfully!');
       }
     });
-  }, 20000);
+  }, vidDeleteTime);
       res.status(200).json(jsonResponse);    
     } catch (error) {
       console.error(error);
@@ -366,6 +376,7 @@ router.get("/fetch-crsel-media", async (req, res) => {
 
         const zipFilePath = `./threadsRes/crsel_media/crsel_media_${uuidv4()}.zip`;
         fetchedCrselUUID = zipFilePath; // Store the file path globally for download access
+        
         const content = await zip.generateAsync({ type: "nodebuffer" });
         fs.writeFileSync(zipFilePath, content);
         console.log('Zip file created successfully!');
@@ -393,7 +404,16 @@ router.get("/fetch-crsel-media", async (req, res) => {
           }
         };
 
-        res.status(200).json(jsonResponse);
+     const crselDeleteTime = 300000 / (1000 * 60);
+   await setTimeout(() => {
+    fs.unlink(zipFilePath, (error) => {
+      if (error) {
+        console.error('Error deleting video file:', error);
+      } else {
+        console.log('Video file deleted successfully!');
+      }
+    });
+  }, crselDeleteTime);   res.status(200).json(jsonResponse);
 
       } catch (err) {
         console.error("Error downloading or zipping images: ", err.message);
