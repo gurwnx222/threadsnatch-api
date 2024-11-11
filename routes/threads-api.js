@@ -155,6 +155,18 @@ router.get("/fetch-vid", async (req, res) => {
           "--no-zygote",
           "--disable-gpu",
           "--disable-dev-shm-usage",
+          '--ignore-certificate-errors',
+    '--incognito',
+    '--disable-features=IsolateOrigins',
+    '--window-size=1920,1080',
+          '--disable-background-networking',
+  '--disable-background-timer-throttling',
+          '--disable-extensions',
+  '--disable-features=AudioServiceOutOfProcess',
+          '--disable-renderer-backgrounding',
+          '--mute-audio',
+  '--no-first-run',
+  '--no-default-browser-check',
         ],
 
         executablePath:
@@ -167,14 +179,26 @@ router.get("/fetch-vid", async (req, res) => {
 
       // Set request interception to block unnecessary resources
       await page.setRequestInterception(true);
-      page.on("request", (req) => {
-        const resourceType = req.resourceType();
-        if (["stylesheet", "image", "font"].includes(resourceType)) {
-          req.abort();
+
+      page.on('request', (request) => {
+        const blockedDomains = [
+          'googlesyndication.com',
+          'adservice.google.com',
+        ];
+
+        const url = request.url();
+
+        if (
+          ['image', 'stylesheet', 'font'].includes(request.resourceType()) ||
+          blockedDomains.some(domain => url.includes(domain))
+        ) {
+          request.abort();
         } else {
-          req.continue();
+          request.continue();
         }
       });
+
+
 
       // Go to the post URL with reduced timeout
       await page.goto(postUrl);
@@ -422,7 +446,7 @@ router.get("/fetch-crsel-media", async (req, res) => {
         console.log('Zip file deleted successfully!');
       }
     });
-  }, 20000);   res.status(200).json(jsonResponse);
+  }, crselDeleteTime);   res.status(200).json(jsonResponse);
 
       } catch (err) {
         console.error("Error downloading or zipping images: ", err.message);
@@ -447,40 +471,58 @@ router.get("/fetch-crsel-media", async (req, res) => {
   await main();
 });
 
-router.get('/download-crsel-media', (req, res) => {
+router.get('/download-crsel-media', async (req, res) => {
   const postUrl = req.query.q;
-  const zipFilePath = fetchedCrselUUID;
+  const zipFilePath = fetchedCrselUUID; // Assuming this is the full path
 
   if (!zipFilePath) {
     return res.status(400).json({ error: 'No carousel images have been fetched.' });
   }
-const fileSize = fs.statSync(zipFilePath).size;
-  res.set({
-    'Content-Type': 'application/zip',
-    'Content-Disposition': 'attachment',
-'filename':`${path.basename(zipFilePath)}`,
-    'Content-Length': `${fileSize}`
-  });
 
-  const zipStream = fs.createReadStream(zipFilePath);
+  try {
+    // Check if the file exists before proceeding
+    await fsPromises.access(zipFilePath);
 
-  zipStream.pipe(res);
+    const fileSize = fs.statSync(zipFilePath).size;
 
-  zipStream.on('end', () => {
-    // Delete the file after the download is complete
-    fs.unlink(zipFilePath, (error) => {
-      if (error) {
-        console.error('Error deleting zip file:', error);
-      } else {
-        console.log('Zip file deleted successfully!');
-      }
+    res.set({
+      'Content-Type': 'application/zip',
+      'Content-Disposition': `attachment; filename="${path.basename(zipFilePath)}"`,
+      'Content-Length': `${fileSize}`
     });
-  });
 
-  zipStream.on('error', (err) => {
-    console.error('Error streaming zip file:', err);
-    res.status(500).json({ error: 'Error streaming zip file.' });
-  });
+    const zipStream = fs.createReadStream(zipFilePath);
+
+    zipStream.pipe(res);
+
+    zipStream.on('end', () => {
+      // Delete the file after the download is complete
+      fsPromises.unlink(zipFilePath)
+        .then(() => {
+          console.log('Zip file deleted successfully!');
+        })
+        .catch((error) => {
+          console.error('Error deleting zip file:', error);
+        });
+    });
+
+    zipStream.on('error', (err) => {
+      console.error('Error streaming zip file:', err);
+      res.status(500).json({ error: 'Error streaming zip file.' });
+    });
+
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.error('File not found:', zipFilePath);
+      res.status(404).json({
+        error: 'The carousel media file you are trying to download does not exist. Please fetch the media again.'
+      });
+    } else {
+      console.error('Error accessing the file:', error);
+      res.status(500).json({ error: 'An error occurred while accessing the file.' });
+    }
+  }
 });
+
 
 export default router
