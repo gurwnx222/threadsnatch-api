@@ -44,6 +44,7 @@ router.get("/fetch-img", async (req, res) => {
     // Download and save the og:image
     const imageName = `image_${uuidv4()}`;
     fetchedImageUUID = imageName; // Store the image name
+    const fullImagePath = `${directoryPath}${fetchedImageUUID}.jpg`;
     const imagePath = await downloadImage(ogImageUrl, imageName, directoryPath);
 
     // Sending JSON as a response
@@ -69,7 +70,16 @@ router.get("/fetch-img", async (req, res) => {
         url: `/download-img?q=${postUrl}`,
       },
     };
-
+const vidDeleteTime = 300000 / (1000 * 60);
+   await setTimeout(() => {
+    fs.unlink(fullImagePath, (error) => {
+      if (error) {
+        console.error('Error deleting video file:', error);
+      } else {
+        console.log('Video file deleted successfully!');
+      }
+    });
+  }, 20000);
     res.status(200).json(jsonResponse);
   } catch (error) {
     console.error(error);
