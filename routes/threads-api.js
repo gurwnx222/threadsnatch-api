@@ -3,6 +3,7 @@ import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import express from "express";
 import { load } from "cheerio";
 import fs from "fs";
+import { promises as fsPromises } from 'fs';
 import path from 'path';
 import axios from "axios";
 import { downloadImage, downloadVideo } from "../threadSaver/threads-download.js";
@@ -70,16 +71,16 @@ router.get("/fetch-img", async (req, res) => {
         url: `/download-img?q=${postUrl}`,
       },
     };
-const vidDeleteTime = 300000 / (1000 * 60);
+const imgDeleteTime = 300000 / (1000 * 60);
    await setTimeout(() => {
     fs.unlink(fullImagePath, (error) => {
       if (error) {
-        console.error('Error deleting video file:', error);
+        console.error('Error deleting image file:', error);
       } else {
-        console.log('Video file deleted successfully!');
+        console.log('Image file deleted successfully!');
       }
     });
-  }, 20000);
+  }, imgDeleteTime);
     res.status(200).json(jsonResponse);
   } catch (error) {
     console.error(error);
@@ -92,38 +93,47 @@ const vidDeleteTime = 300000 / (1000 * 60);
   }
 });
 
-router.get('/download-img', (req, res) => {
+router.get('/download-img', async (req, res) => {
   const postUrl = req.query.q;
 
   if (!fetchedImageUUID) {
     return res.status(400).json({ error: 'No image has been fetched.' });
   }
 
-  const imagePath = `./threadsRes/${fetchedImageUUID}.jpg`; // Use the image name
+  const imagePath = `./threadsRes/${fetchedImageUUID}.jpg`;
 
-  res.set({
-    'Content-Type': 'image/jpeg',
-    'Content-Disposition': `attachment; filename="${fetchedImageUUID}.jpg"`,
-  });
+  try {
+    // Check if the image exists using fsPromises
+    await fsPromises.access(imagePath);
 
-  const imgStream = fs.createReadStream(imagePath);
-
-  imgStream.pipe(res);
-
-  imgStream.on('close', () => {
-    fs.unlink(imagePath, (error) => {
-      if (error) {
-        console.error('Error deleting image file:', error);
-      } else {
-        console.log('Image file deleted successfully!');
-      }
+    res.set({
+      'Content-Type': 'image/jpeg',
+      'Content-Disposition': `attachment; filename="${fetchedImageUUID}.jpg"`,
     });
-  });
 
-  imgStream.on('error', (err) => {
-    console.error('Error streaming image:', err);
-    res.status(500).json({ error: 'Error streaming image.' });
-  });
+    const imgStream = fs.createReadStream(imagePath);
+    imgStream.pipe(res);
+
+    imgStream.on('close', () => {
+      fsPromises.unlink(imagePath)
+        .then(() => {
+          console.log('Image file deleted successfully!');
+        })
+        .catch((error) => {
+          console.error('Error deleting image file:', error);
+        });
+    });
+
+    imgStream.on('error', (err) => {
+      console.error('Error streaming image:', err);
+      res.status(500).json({ error: 'Error streaming image.' });
+    });
+  } catch (error) {
+    console.error('Error accessing image file:', error);
+    res.status(404).json({
+      error: 'Image not found. Please fetch the image again to download it.',
+    });
+  }
 });
 
 router.get("/fetch-vid", async (req, res) => {
@@ -407,12 +417,12 @@ router.get("/fetch-crsel-media", async (req, res) => {
    await setTimeout(() => {
     fs.unlink(zipFilePath, (error) => {
       if (error) {
-        console.error('Error deleting video file:', error);
+        console.error('Error deleting zip file:', error);
       } else {
-        console.log('Video file deleted successfully!');
+        console.log('Zip file deleted successfully!');
       }
     });
-  }, crselDeleteTime);   res.status(200).json(jsonResponse);
+  }, 20000);   res.status(200).json(jsonResponse);
 
       } catch (err) {
         console.error("Error downloading or zipping images: ", err.message);
