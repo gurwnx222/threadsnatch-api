@@ -1,5 +1,6 @@
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import BlockResourcesPlugin from "puppeteer-extra-plugin-block-resources";
 import express from "express";
 import { load } from "cheerio";
 import fs from "fs";
@@ -13,7 +14,15 @@ import dotenv from "dotenv";
 dotenv.config();
 
 const router = express.Router();
-puppeteer.use(StealthPlugin())
+
+// Use the Stealth plugin
+puppeteer.use(StealthPlugin());
+
+// Use the block resources plugin
+puppeteer.use(BlockResourcesPlugin({
+  blockedTypes: new Set(["image", "stylesheet", "font", "manifest"])
+}));
+
 
 // Variable to initiate different UUIDs for different threads
 let fetchedImageUUID = null;
@@ -173,27 +182,11 @@ router.get("/fetch-vid", async (req, res) => {
             : puppeteer.executablePath(),
       });
 
-      const page = await browser.newPage();
-
-      // Set request interception to block unnecessary resources
-      await page.setRequestInterception(true);
-      page.on('request', (request) => {
-    if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
-        request.abort();
-    } else {
-        request.continue();
-    }
-});
+      const page = await browser.newPage()  
       // Go to the post URL with reduced timeout
-      await page.goto(postUrl);
-
-      // Extract metadata and HTML elements
-      const metaTags = await page.evaluate(() => ({
-        ogImageUrl: document.querySelector('meta[property="og:image"]')?.getAttribute("content"),
-        postTitle: document.querySelector('meta[property="og:title"]')?.getAttribute("content"),
-        postDescription: document.querySelector('meta[property="og:description"]')?.getAttribute("content"),
-        postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content"),
-      }));
+      await page.goto(postUrl, {
+        waitUntil: "domcontentloaded",
+      })
 
       // Wait for the required selector with a specific timeout
       await page.waitForSelector(".x1ja2u2z");
@@ -207,7 +200,7 @@ router.get("/fetch-vid", async (req, res) => {
         return targetDivs.map(div => ({ content: div.innerHTML }));
       });
 
-      const nestedVidTagDiv = nestedDivsHTML[1]?.content;    
+      const nestedVidTagDiv = nestedDivsHTML[0]?.content;    
           const $ = load(nestedVidTagDiv);     
           const videoUrl = $('video').attr('src');     
       if (!videoUrl) {
