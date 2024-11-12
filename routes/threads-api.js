@@ -200,7 +200,7 @@ router.get("/fetch-vid", async (req, res) => {
         return targetDivs.map(div => ({ content: div.innerHTML }));
       });
 
-      const nestedVidTagDiv = nestedDivsHTML[0]?.content;    
+      const nestedVidTagDiv = nestedDivsHTML[1]?.content;    
           const $ = load(nestedVidTagDiv);     
           const videoUrl = $('video').attr('src');     
       if (!videoUrl) {
@@ -213,26 +213,6 @@ router.get("/fetch-vid", async (req, res) => {
 //close the browser
   await browser.close()
       // Prepare the JSON response
-      const jsonResponse = {
-        response: "200",
-        message: "Video downloaded on server successfully!",
-        data: {
-          postData: {
-            postTitle: metaTags.postTitle,
-            postDescription: metaTags.postDescription,
-            postAuthor: metaTags.postAuthor,
-          },
-          videoData: {
-            videoName: videoName,
-            resolution: "HD",
-            videoUrl: videoUrl,
-          },
-        },
-        downloadVideo: {
-          message: "You can download the video from endpoint /download-vid",
-          url: `/download-vid?q=${postUrl}`,
-        },
-      };
       const vidDeleteTime = 300000 / (1000 * 60);
    await setTimeout(() => {
     fs.unlink(fullVideoPath, (error) => {
@@ -243,7 +223,7 @@ router.get("/fetch-vid", async (req, res) => {
       }
     });
   }, vidDeleteTime);
-      res.status(200).json(jsonResponse);    
+         
     } catch (error) {
       console.error(error);
       res.status(500).json({
