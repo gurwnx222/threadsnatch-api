@@ -148,6 +148,7 @@ router.get("/fetch-vid", async (req, res) => {
     try {
       const browser = await puppeteer.launch({
         headless: "new",
+        dumpio: true,
         args: [
           "--disable-setuid-sandbox",
           "--no-sandbox",
@@ -156,9 +157,6 @@ router.get("/fetch-vid", async (req, res) => {
           "--disable-gpu",
           "--disable-dev-shm-usage",
           '--ignore-certificate-errors',
-    '--incognito',
-    '--disable-features=IsolateOrigins',
-    '--window-size=1920,1080',
           '--disable-background-networking',
   '--disable-background-timer-throttling',
           '--disable-extensions',
