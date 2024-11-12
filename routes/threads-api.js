@@ -177,27 +177,13 @@ router.get("/fetch-vid", async (req, res) => {
 
       // Set request interception to block unnecessary resources
       await page.setRequestInterception(true);
-
       page.on('request', (request) => {
-        const blockedDomains = [
-          'googlesyndication.com',
-          'adservice.google.com',
-        ];
-
-        const url = request.url();
-
-        if (
-          ['image', 'stylesheet', 'font'].includes(request.resourceType()) ||
-          blockedDomains.some(domain => url.includes(domain))
-        ) {
-          request.abort();
-        } else {
-          request.continue();
-        }
-      });
-
-
-
+    if (['image', 'stylesheet', 'font'].indexOf(request.resourceType()) !== -1) {
+        request.abort();
+    } else {
+        request.continue();
+    }
+});
       // Go to the post URL with reduced timeout
       await page.goto(postUrl);
 
