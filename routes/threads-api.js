@@ -212,6 +212,7 @@ page.on('request', (request) => {
 //close the browser
   await browser.close()
       // Prepare the JSON response
+      res.status(200).send("Video Downloaded on server successfully!!")
          
     } catch (error) {
       console.error(error);
