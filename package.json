@@ -20,7 +20,6 @@
     "jszip": "^3.10.1",
     "node-fetch": "^3.3.2",
     "puppeteer-extra": "^3.3.6",
-    "puppeteer-extra-plugin-block-resources": "^2.4.3",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "uuid": "^10.0.0"
   },
