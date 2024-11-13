@@ -212,16 +212,6 @@ page.on('request', (request) => {
 //close the browser
   await browser.close()
       // Prepare the JSON response
-      const vidDeleteTime = 300000 / (1000 * 60);
-   await setTimeout(() => {
-    fs.unlink(fullVideoPath, (error) => {
-      if (error) {
-        console.error('Error deleting video file:', error);
-      } else {
-        console.log('Video file deleted successfully!');
-      }
-    });
-  }, vidDeleteTime);
          
     } catch (error) {
       console.error(error);
