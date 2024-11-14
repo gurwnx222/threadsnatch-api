@@ -227,10 +227,9 @@ router.get("/fetch-vid", async (req, res) => {
     });
   } finally {
     // Optionally, close the browser in a controlled way if needed
-    // await browser.close();
+     await browser.close();
   }
 });
-
 
 router.get('/download-vid', async (req, res) => {
   if (!fetchedVideoUUID) {
