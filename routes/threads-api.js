@@ -12,6 +12,7 @@ import JSZip from 'jszip';
 import dotenv from "dotenv";
 dotenv.config();
 
+let browser;
 const router = express.Router();
 
 // Use the Stealth plugin
@@ -146,9 +147,10 @@ router.get("/fetch-vid", async (req, res) => {
     return res.status(400).send("Invalid Threads URL. Please provide a valid URL.");
   }
 
-  async function main() {
-    try {
-      const browser = await puppeteer.launch({
+  try {
+    // Initialize the browser if not already open
+    if (!browser) {
+      browser = await puppeteer.launch({
         headless: "new",
         args: [
           "--disable-setuid-sandbox",
@@ -159,72 +161,76 @@ router.get("/fetch-vid", async (req, res) => {
           "--disable-dev-shm-usage",
           '--ignore-certificate-errors',
           '--disable-background-networking',
-  '--disable-background-timer-throttling',
+          '--disable-background-timer-throttling',
           '--disable-extensions',
-  '--disable-features=AudioServiceOutOfProcess',
+          '--disable-features=AudioServiceOutOfProcess',
           '--disable-renderer-backgrounding',
           '--mute-audio',
-  '--no-first-run',
-  '--no-default-browser-check',
+          '--no-first-run',
+          '--no-default-browser-check',
         ],
-
-        executablePath:
-          process.env.NODE_ENV === "production"
-            ? process.env.PUPPETEER_EXECUTABLE_PATH
-            : puppeteer.executablePath(),
-      });
-
-      const page = await browser.newPage()  
-      // Go to the post URL with reduced timeout
-      await page.goto(postUrl)
-await page.setRequestInterception(true);
-page.on('request', (request) => {
-  if (['image', 'stylesheet', 'font'].includes(request.resourceType())) {
-    request.abort();
-    console.log(`resources blocked: ${request.resourceType()}`);
-  } else {
-    request.continue();
-  }
-});
-      
-      // Wait for the required selector with a specific timeout
-      await page.waitForSelector(".x1ja2u2z");
-      
-      const nestedDivsHTML = await page.evaluate(() => {
-        // Get all divs with class 'x1ja2u2z'
-        const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
-        // Filter divs to find those containing 'x1xmf6yo' as an inner div
-        const targetDivs = nestedDivs.filter(div => div.querySelector('.x1xmf6yo'));
-        // Return the HTML of the filtered divs
-        return targetDivs.map(div => ({ content: div.innerHTML }));
-      });
-
-      const nestedVidTagDiv = nestedDivsHTML[0]?.content;    
-          const $ = load(nestedVidTagDiv);     
-          const videoUrl = $('video').attr('src');     
-      if (!videoUrl) {
-        console.log("video not found!"); 
-      }
-      const videoName = `video_${uuidv4()}`;
-      fetchedVideoUUID = videoName;
-      const fullVideoPath = `${directoryPath}${fetchedVideoUUID}.mp4`;
-      await downloadVideo(videoUrl, videoName, directoryPath);
-//close the browser
-  await browser.close()
-      // Prepare the JSON response
-      res.status(200).send("Video Downloaded on server successfully!!")
-         
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({
-        response: "500",
-        message: "An error occurred while fetching the video.",
-        error: error.message,
+        executablePath: process.env.NODE_ENV === "production"
+          ? process.env.PUPPETEER_EXECUTABLE_PATH
+          : puppeteer.executablePath(),
       });
     }
+
+    const page = await browser.newPage();
+
+    // Intercept requests to block certain resources
+    await page.setRequestInterception(true);
+    page.on('request', (request) => {
+      if (['image', 'stylesheet', 'font', 'manifest', 'media'].includes(request.resourceType())) {
+        request.abort();
+        console.log(`resources blocked: ${request.resourceType()}`);
+      } else {
+        request.continue();
+      }
+    });
+
+    // Navigate to the post URL
+    await page.goto(postUrl);
+
+    // Wait for the required selector
+    await page.waitForSelector(".x1ja2u2z");
+
+    // Extract video content
+    const nestedDivsHTML = await page.evaluate(() => {
+      const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
+      const targetDivs = nestedDivs.filter(div => div.querySelector('.x1xmf6yo'));
+      return targetDivs.map(div => ({ content: div.innerHTML }));
+    });
+
+    const nestedVidTagDiv = nestedDivsHTML[1]?.content;
+    const $ = load(nestedVidTagDiv);
+    const videoUrl = $('video').attr('src');
+
+    if (!videoUrl) {
+      console.log("video not found!");
+    }
+
+    const videoName = `video_${uuidv4()}`;
+    const fullVideoPath = `${directoryPath}${videoName}.mp4`;
+    await downloadVideo(videoUrl, videoName, directoryPath);
+
+    // Close the page after use
+    await page.close();
+
+    // Send the response
+    res.status(200).send("Video Downloaded on server successfully!!");
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      response: "500",
+      message: "An error occurred while fetching the video.",
+      error: error.message,
+    });
+  } finally {
+    // Optionally, close the browser in a controlled way if needed
+    // await browser.close();
   }
-  main();
 });
+
 
 router.get('/download-vid', async (req, res) => {
   if (!fetchedVideoUUID) {
