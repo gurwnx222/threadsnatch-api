@@ -145,8 +145,7 @@ router.get("/fetch-vid", async (req, res) => {
   if (!postUrl || !postUrl.includes("https://www.threads.net/")) {
     return res.status(400).send("Invalid Threads URL. Please provide a valid URL.");
   }
-  try { 
-      const response = await axios.get(postUrl);
+  const response = await axios.get(postUrl);
     const $ = load(response.data);
 
     // Extract meta tags using Cheerio
@@ -157,6 +156,7 @@ router.get("/fetch-vid", async (req, res) => {
       postAuthor: $('meta[property="article:author"]').attr("content"),
     };
     console.log('Meta tags Extracted!!');
+  try {    
     const browser = await puppeteer.launch({
   headless: "new",
   args: [
