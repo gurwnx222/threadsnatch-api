@@ -145,8 +145,9 @@ router.get("/fetch-vid", async (req, res) => {
   if (!postUrl || !postUrl.includes("https://www.threads.net/")) {
     return res.status(400).send("Invalid Threads URL. Please provide a valid URL.");
   }
-  const response = await axios.get(postUrl);
-    const $ = cheerio.load(response.data);
+  try { 
+      const response = await axios.get(postUrl);
+    const $ = load(response.data);
 
     // Extract meta tags using Cheerio
     const metaTags = {
@@ -155,8 +156,7 @@ router.get("/fetch-vid", async (req, res) => {
       postDescription: $('meta[property="og:description"]').attr("content"),
       postAuthor: $('meta[property="article:author"]').attr("content"),
     };
-  try {
-    
+    console.log('Meta tags Extracted!!');
     const browser = await puppeteer.launch({
   headless: "new",
   args: [
@@ -185,7 +185,7 @@ const page = await browser.newPage();
     // Intercept requests to block certain resources
     await page.setRequestInterception(true);
     page.on('request', (request) => {
-      if (['image', 'stylesheet', 'font', 'manifest', 'texttrack', 'media'].includes(request.resourceType())) {
+      if (['image', 'stylesheet', 'font', 'manifest', 'texttrack', 'media', 'other', 'xhr'].includes(request.resourceType())) {
         request.abort();
         console.log(`resources blocked: ${request.resourceType()}`);
       } else {
