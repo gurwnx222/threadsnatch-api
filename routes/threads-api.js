@@ -12,7 +12,6 @@ import JSZip from 'jszip';
 import dotenv from "dotenv";
 dotenv.config();
 
-let browser;
 const router = express.Router();
 
 // Use the Stealth plugin
@@ -148,32 +147,30 @@ router.get("/fetch-vid", async (req, res) => {
   }
 
   try {
-    if (!browser) {
-      browser = await puppeteer.launch({
-        headless: "new",
-        args: [
-          "--disable-setuid-sandbox",
-          "--no-sandbox",
-          "--single-process",
-          "--no-zygote",
-          "--disable-gpu",
-          "--disable-dev-shm-usage",
-          '--ignore-certificate-errors',
-          '--disable-background-networking',
-          '--disable-background-timer-throttling',
-          '--disable-extensions',
-          '--disable-features=AudioServiceOutOfProcess',
-          '--disable-renderer-backgrounding',
-          '--mute-audio',
-          '--no-first-run',
-          '--no-default-browser-check',
-        ],
-        executablePath: process.env.NODE_ENV === "production"
-          ? process.env.PUPPETEER_EXECUTABLE_PATH
-          : puppeteer.executablePath(),
-      });
-    }
-    const page = await browser.newPage();
+    const browser = await puppeteer.launch({
+  headless: "new",
+  args: [
+    "--disable-setuid-sandbox",
+    "--no-sandbox",
+    "--single-process",
+    "--no-zygote",
+    "--disable-gpu",
+    "--disable-dev-shm-usage",
+    '--ignore-certificate-errors',
+    '--disable-background-networking',
+    '--disable-background-timer-throttling',
+    '--disable-extensions',
+    '--disable-features=AudioServiceOutOfProcess',
+    '--disable-renderer-backgrounding',
+    '--mute-audio',
+    '--no-first-run',
+    '--no-default-browser-check',
+  ],
+  executablePath: process.env.NODE_ENV === "production"
+    ? process.env.PUPPETEER_EXECUTABLE_PATH
+    : puppeteer.executablePath(),
+});
+const page = await browser.newPage();
 
     // Intercept requests to block certain resources
     await page.setRequestInterception(true);
@@ -206,10 +203,10 @@ const videoUrl = nestedVidTagDiv.find('video').attr('src');
 if (!videoUrl) {
   console.log("video not found!");
 }
-
     const videoName = `video_${uuidv4()}`;
     const fullVideoPath = `${directoryPath}${videoName}.mp4`;
     await downloadVideo(videoUrl, videoName, directoryPath);
+    await browser.close();
     // Send the response
     res.status(200).send("Video Downloaded on server successfully!!");
   } catch (error) {
@@ -219,11 +216,7 @@ if (!videoUrl) {
       message: "An error occurred while fetching the video.",
       error: error.message,
     });
-  } finally {
-    if (browser) {
-       await browser.close();
-    }
-  }
+  } 
 });
 
 router.get('/download-vid', async (req, res) => {
