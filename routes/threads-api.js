@@ -12,6 +12,7 @@ import JSZip from 'jszip';
 import dotenv from "dotenv";
 dotenv.config();
 
+let browser;
 const router = express.Router();
 
 // Use the Stealth plugin
@@ -147,6 +148,7 @@ router.get("/fetch-vid", async (req, res) => {
   }
 
   try {
+    if (!browser) {
       browser = await puppeteer.launch({
         headless: "new",
         args: [
@@ -170,7 +172,7 @@ router.get("/fetch-vid", async (req, res) => {
           ? process.env.PUPPETEER_EXECUTABLE_PATH
           : puppeteer.executablePath(),
       });
-
+    }
     const page = await browser.newPage();
 
     // Intercept requests to block certain resources
@@ -218,7 +220,9 @@ router.get("/fetch-vid", async (req, res) => {
       error: error.message,
     });
   } finally {
-     await browser.close();
+    if (browser) {
+       await browser.close();
+    }
   }
 });
 
