@@ -198,14 +198,14 @@ router.get("/fetch-vid", async (req, res) => {
       const targetDivs = nestedDivs.filter(div => div.querySelector('.x1xmf6yo'));
       return targetDivs.map(div => ({ content: div.innerHTML }));
     });
+    const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
+const $ = load(combinedHTML);
+    const nestedVidTagDiv = $('.x1xmf6yo').first();
+const videoUrl = nestedVidTagDiv.find('video').attr('src');
 
-    const nestedVidTagDiv = nestedDivsHTML[0]?.content;
-    const $ = load(nestedVidTagDiv);
-    const videoUrl = $('video').attr('src');
-
-    if (!videoUrl) {
-      console.log("video not found!");
-    }
+if (!videoUrl) {
+  console.log("video not found!");
+}
 
     const videoName = `video_${uuidv4()}`;
     const fullVideoPath = `${directoryPath}${videoName}.mp4`;
