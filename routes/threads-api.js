@@ -145,8 +145,18 @@ router.get("/fetch-vid", async (req, res) => {
   if (!postUrl || !postUrl.includes("https://www.threads.net/")) {
     return res.status(400).send("Invalid Threads URL. Please provide a valid URL.");
   }
+  const response = await axios.get(postUrl);
+    const $ = cheerio.load(response.data);
 
+    // Extract meta tags using Cheerio
+    const metaTags = {
+      ogImageUrl: $('meta[property="og:image"]').attr("content"),
+      postTitle: $('meta[property="og:title"]').attr("content"),
+      postDescription: $('meta[property="og:description"]').attr("content"),
+      postAuthor: $('meta[property="article:author"]').attr("content"),
+    };
   try {
+    
     const browser = await puppeteer.launch({
   headless: "new",
   args: [
@@ -175,14 +185,13 @@ const page = await browser.newPage();
     // Intercept requests to block certain resources
     await page.setRequestInterception(true);
     page.on('request', (request) => {
-      if (['image', 'stylesheet', 'font', 'manifest', 'texttrack'].includes(request.resourceType())) {
+      if (['image', 'stylesheet', 'font', 'manifest', 'texttrack', 'media'].includes(request.resourceType())) {
         request.abort();
         console.log(`resources blocked: ${request.resourceType()}`);
       } else {
         request.continue();
       }
     });
-
     // Navigate to the post URL
     await page.goto(postUrl);
 
@@ -207,8 +216,37 @@ if (!videoUrl) {
     const fullVideoPath = `${directoryPath}${videoName}.mp4`;
     await downloadVideo(videoUrl, videoName, directoryPath);
     await browser.close();
-    // Send the response
-    res.status(200).send("Video Downloaded on server successfully!!");
+   const jsonResponse = {
+      response: "200",
+      message: "Video downloaded on server successfully!",
+      data: {
+        postData: {
+          postTitle: metaTags.postTitle,
+          postDescription: metaTags.postDescription,
+          postAuthor: metaTags.postAuthor,
+        },
+        videoData: {
+          videoName: videoName,
+          resolution: "HD",
+          videoUrl: videoUrl,
+        },
+      },
+      downloadVideo: {
+        message: "You can download the video from endpoint /download-vid",
+        url: `/download-vid?q=${postUrl}`,
+      },
+    };
+    res.status(200).json(jsonResponse);    
+          const vidDeleteTime = 300000 / (1000 * 60);
+   await setTimeout(() => {
+    fs.unlink(fullVideoPath, (error) => {
+      if (error) {
+        console.error('Error deleting video file:', error);
+      } else {
+        console.log('Video file deleted successfully!');
+      }
+    });
+  }, vidDeleteTime);    
   } catch (error) {
     console.error(error);
     res.status(500).json({
