@@ -12,7 +12,6 @@ import JSZip from 'jszip';
 import dotenv from "dotenv";
 dotenv.config();
 
-let browser;
 const router = express.Router();
 
 // Use the Stealth plugin
@@ -148,8 +147,6 @@ router.get("/fetch-vid", async (req, res) => {
   }
 
   try {
-    // Initialize the browser if not already open
-    if (!browser) {
       browser = await puppeteer.launch({
         headless: "new",
         args: [
@@ -173,14 +170,13 @@ router.get("/fetch-vid", async (req, res) => {
           ? process.env.PUPPETEER_EXECUTABLE_PATH
           : puppeteer.executablePath(),
       });
-    }
 
     const page = await browser.newPage();
 
     // Intercept requests to block certain resources
     await page.setRequestInterception(true);
     page.on('request', (request) => {
-      if (['image', 'stylesheet', 'font', 'manifest', 'media'].includes(request.resourceType())) {
+      if (['image', 'stylesheet', 'font', 'manifest', 'texttrack'].includes(request.resourceType())) {
         request.abort();
         console.log(`resources blocked: ${request.resourceType()}`);
       } else {
@@ -212,10 +208,6 @@ router.get("/fetch-vid", async (req, res) => {
     const videoName = `video_${uuidv4()}`;
     const fullVideoPath = `${directoryPath}${videoName}.mp4`;
     await downloadVideo(videoUrl, videoName, directoryPath);
-
-    // Close the page after use
-    await page.close();
-
     // Send the response
     res.status(200).send("Video Downloaded on server successfully!!");
   } catch (error) {
@@ -226,7 +218,6 @@ router.get("/fetch-vid", async (req, res) => {
       error: error.message,
     });
   } finally {
-    // Optionally, close the browser in a controlled way if needed
      await browser.close();
   }
 });
