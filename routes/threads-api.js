@@ -205,9 +205,9 @@ const page = await browser.newPage();
     // Intercept requests to block certain resources
     await page.setRequestInterception(true);
     page.on('request', (request) => {
-      if (['image', 'stylesheet', 'font', 'manifest', 'texttrack', 'xhr'].includes(request.resourceType())) {
+      if (['image', 'stylesheet', 'font', 'manifest'].includes(request.resourceType())) {
         request.abort();
-        console.log(`resources blocked: ${request.resourceType()}`);
+        console.log('resources blocked:');
       } else {
         request.continue();
       }
