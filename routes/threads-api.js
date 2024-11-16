@@ -206,7 +206,7 @@ const page = await browser.newPage();
     });
     const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
 const $ = load(combinedHTML);
-    const nestedVidTagDiv = $('.x1xmf6yo').first();
+    const nestedVidTagDiv = $('.x1xmf6yo').eq(1);
 const videoUrl = nestedVidTagDiv.find('video').attr('src');
 
 if (!videoUrl) {
@@ -236,17 +236,7 @@ if (!videoUrl) {
         url: `/download-vid?q=${postUrl}`,
       },
     };
-    res.status(200).json(jsonResponse);    
-          const vidDeleteTime = 300000 / (1000 * 60);
-   await setTimeout(() => {
-    fs.unlink(fullVideoPath, (error) => {
-      if (error) {
-        console.error('Error deleting video file:', error);
-      } else {
-        console.log('Video file deleted successfully!');
-      }
-    });
-  }, vidDeleteTime);    
+    res.status(200).json(jsonResponse);        
   } catch (error) {
     console.error(error);
     res.status(500).json({
