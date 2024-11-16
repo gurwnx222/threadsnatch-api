@@ -185,7 +185,7 @@ const page = await browser.newPage();
     // Intercept requests to block certain resources
     await page.setRequestInterception(true);
     page.on('request', (request) => {
-      if (['image', 'stylesheet', 'font', 'manifest', 'texttrack', 'media', 'other', 'xhr'].includes(request.resourceType())) {
+      if (['image', 'stylesheet', 'font', 'manifest', 'texttrack', 'xhr'].includes(request.resourceType())) {
         request.abort();
         console.log(`resources blocked: ${request.resourceType()}`);
       } else {
@@ -206,7 +206,7 @@ const page = await browser.newPage();
     });
     const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
 const $ = load(combinedHTML);
-    const nestedVidTagDiv = $('.x1xmf6yo').eq(1);
+    const nestedVidTagDiv = $('.x1xmf6yo').eq(0);
 const videoUrl = nestedVidTagDiv.find('video').attr('src');
 
 if (!videoUrl) {
