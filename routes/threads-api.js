@@ -156,6 +156,26 @@ router.get("/fetch-vid", async (req, res) => {
       postAuthor: $('meta[property="article:author"]').attr("content"),
     };
     console.log('Meta tags Extracted!!');
+  const jsonResponse = {
+      response: "200",
+      message: "Video downloaded on server successfully!",
+      data: {
+        postData: {
+          postTitle: metaTags.postTitle,
+          postDescription: metaTags.postDescription,
+          postAuthor: metaTags.postAuthor,
+        },
+        videoData: {
+          videoName: videoName,
+          resolution: "HD",
+          videoUrl: videoUrl,
+        },
+      },
+      downloadVideo: {
+        message: "You can download the video from endpoint /download-vid",
+        url: `/download-vid?q=${postUrl}`,
+      },
+    };
   try {    
     const browser = await puppeteer.launch({
   headless: "new",
@@ -206,37 +226,17 @@ const page = await browser.newPage();
     });
     const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
 const $ = load(combinedHTML);
-    const nestedVidTagDiv = $('.x1xmf6yo').eq(0);
+    const nestedVidTagDiv = $('.x1xmf6yo').eq(1);
 const videoUrl = nestedVidTagDiv.find('video').attr('src');
-
+ await page.close()
 if (!videoUrl) {
   console.log("video not found!");
 }
     const videoName = `video_${uuidv4()}`;
     const fullVideoPath = `${directoryPath}${videoName}.mp4`;
+    
     await downloadVideo(videoUrl, videoName, directoryPath);
-    await browser.close();
-   const jsonResponse = {
-      response: "200",
-      message: "Video downloaded on server successfully!",
-      data: {
-        postData: {
-          postTitle: metaTags.postTitle,
-          postDescription: metaTags.postDescription,
-          postAuthor: metaTags.postAuthor,
-        },
-        videoData: {
-          videoName: videoName,
-          resolution: "HD",
-          videoUrl: videoUrl,
-        },
-      },
-      downloadVideo: {
-        message: "You can download the video from endpoint /download-vid",
-        url: `/download-vid?q=${postUrl}`,
-      },
-    };
-    res.status(200).json(jsonResponse);        
+    res.json(jsonResponse);        
   } catch (error) {
     console.error(error);
     res.status(500).json({
