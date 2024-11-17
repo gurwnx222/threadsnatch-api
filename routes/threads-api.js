@@ -102,34 +102,9 @@ router.get("/fetch-vid", async (req, res) => {
   }
 
   try {
-    // Run axios and Puppeteer in parallel
-    const [response, browser] = await Promise.all([
-      axios.get(postUrl),
-      puppeteer.launch({
-        headless: "new",
-        args: [
-          "--disable-setuid-sandbox",
-          "--no-sandbox",
-          "--single-process",
-          "--no-zygote",
-          "--disable-gpu",
-          "--disable-dev-shm-usage",
-          '--ignore-certificate-errors',
-          '--disable-background-networking',
-          '--disable-background-timer-throttling',
-          '--disable-extensions',
-          '--disable-features=AudioServiceOutOfProcess',
-          '--disable-renderer-backgrounding',
-          '--mute-audio',
-          '--no-first-run',
-          '--no-default-browser-check',
-        ],
-        executablePath: process.env.NODE_ENV === "production"
-          ? process.env.PUPPETEER_EXECUTABLE_PATH
-          : puppeteer.executablePath(),
-      }),
-    ]);
-
+    // Execute Axios request first
+    const response = await axios.get(postUrl);
+    // Extract meta tags from the response
     const $ = load(response.data);
     const metaTags = {
       ogImageUrl: $('meta[property="og:image"]').attr("content"),
@@ -139,6 +114,31 @@ router.get("/fetch-vid", async (req, res) => {
     };
     console.log('Meta tags Extracted!!');
 
+    // Launch Puppeteer browser after the Axios request has completed
+    const browser = await puppeteer.launch({
+      headless: "new",
+      args: [
+        "--disable-setuid-sandbox",
+        "--no-sandbox",
+        "--single-process",
+        "--no-zygote",
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+        '--ignore-certificate-errors',
+        '--disable-background-networking',
+        '--disable-background-timer-throttling',
+        '--disable-extensions',
+        '--disable-features=AudioServiceOutOfProcess',
+        '--disable-renderer-backgrounding',
+        '--mute-audio',
+        '--no-first-run',
+        '--no-default-browser-check',
+      ],
+      executablePath: process.env.NODE_ENV === "production"
+        ? process.env.PUPPETEER_EXECUTABLE_PATH
+        : puppeteer.executablePath(),
+    });
+    // Create a new page and setup interception
     const page = await browser.newPage();
     await page.setRequestInterception(true);
     page.on('request', (request) => {
@@ -149,18 +149,24 @@ router.get("/fetch-vid", async (req, res) => {
       }
     });
 
+    // Go to the post URL and wait for selector to load
     await page.goto(postUrl);
     await page.waitForSelector(".x1ja2u2z");
+
+    // Extract the nested HTML for the video
     const nestedDivsHTML = await page.evaluate(() => {
       const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
       const targetDivs = nestedDivs.filter(div => div.querySelector('.x1xmf6yo'));
       return targetDivs.map(div => ({ content: div.innerHTML }));
     });
 
+    // Combine the HTML from nested divs
     const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
     const $2 = load(combinedHTML);
-    const nestedVidTagDiv = $2('.x1xmf6yo').eq(0);
+    const nestedVidTagDiv = $2('.x1xmf6yo').eq(1);
     const videoUrl = nestedVidTagDiv.find('video').attr('src');
+    
+    // Check if video URL is found and return appropriate response
     if (!videoUrl) {
       console.log("Video not found!");
       return res.json({
@@ -169,6 +175,9 @@ router.get("/fetch-vid", async (req, res) => {
       });
     }
 
+    console.log("Video fetched !!");
+
+    // Send successful response with extracted data
     res.json({
       response: "200",
       message: "Video URL extracted successfully!",
@@ -184,11 +193,15 @@ router.get("/fetch-vid", async (req, res) => {
         },
       },
     });
+
+    // Close the Puppeteer page after task completion
     await page.close();
-  } catch (error) {
+    await browser.close();
+} catch (error) {
     console.error(error);
     res.status(500).send("An error occurred while fetching the video.");
   }
+  
 });
 
 router.get("/fetch-crsel-media", async (req, res) => {
