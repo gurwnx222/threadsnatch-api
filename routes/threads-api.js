@@ -138,24 +138,20 @@ router.get("/fetch-vid", async (req, res) => {
         request.continue();
       }
     });
-
     // Go to the post URL and wait for selector to load
     await page.goto(postUrl);
     await page.waitForSelector(".x1ja2u2z");
-
     // Extract the nested HTML for the video
     const nestedDivsHTML = await page.evaluate(() => {
       const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
       const targetDivs = nestedDivs.filter(div => div.querySelector('.x1xmf6yo'));
       return targetDivs.map(div => ({ content: div.innerHTML }));
     });
-
-    // Combine the HTML from nested divs
+  // Combine the HTML from nested divs
     const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
     const $2 = load(combinedHTML);
     const nestedVidTagDiv = $2('.x1xmf6yo').eq(0);
     const videoUrl = nestedVidTagDiv.find('video').attr('src');
-
     // Send response as soon as video URL is found
     if (!videoUrl) {
       console.log("Video not found!");
@@ -164,7 +160,6 @@ router.get("/fetch-vid", async (req, res) => {
         message: "Video not found.",
       });
     }
-
     console.log("Video fetched !!");
     res.json({
       response: "200",
@@ -182,12 +177,9 @@ router.get("/fetch-vid", async (req, res) => {
       },
     });
     page.close().catch(err => console.error("Error closing page: ", err));
-
 } catch (error) {
     console.error(error);
     res.status(500).send("An error occurred while fetching the video.");
-  } finally {
-  await browser.close();  // Close the browser in the `finally` block to ensure it happens no matter what
   }
 }); 
 
