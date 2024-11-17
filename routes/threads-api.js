@@ -88,7 +88,6 @@ router.get("/fetch-vid", async (req, res) => {
   if (!postUrl || !postUrl.includes("https://www.threads.net/")) {
     return res.status(400).send("Invalid Threads URL. Please provide a valid URL.");
   }
-
   try {
     // Execute Axios request first
     const response = await axios.get(postUrl);
@@ -102,32 +101,30 @@ router.get("/fetch-vid", async (req, res) => {
       postAuthor: $('meta[property="article:author"]').attr("content"),
     };
     console.log('Meta tags Extracted!!');
-
     // Launch Puppeteer browser after the Axios request has completed
     const browser = await puppeteer.launch({
-      headless: "new",
-      args: [
-        "--disable-setuid-sandbox",
-        "--no-sandbox",
-        "--single-process",
-        "--no-zygote",
-        "--disable-gpu",
-        "--disable-dev-shm-usage",
-        '--ignore-certificate-errors',
-        '--disable-background-networking',
-        '--disable-background-timer-throttling',
-        '--disable-extensions',
-        '--disable-features=AudioServiceOutOfProcess',
-        '--disable-renderer-backgrounding',
-        '--mute-audio',
-        '--no-first-run',
-        '--no-default-browser-check',
-      ],
-      executablePath: process.env.NODE_ENV === "production"
-        ? process.env.PUPPETEER_EXECUTABLE_PATH
-        : puppeteer.executablePath(),
-    });
-
+  headless: "new",
+  args: [
+    "--disable-setuid-sandbox",
+    "--no-sandbox",
+    "--single-process",
+    "--no-zygote",
+    "--disable-gpu",
+    "--disable-dev-shm-usage",
+    '--ignore-certificate-errors',
+    '--disable-background-networking',
+    '--disable-background-timer-throttling',
+    '--disable-extensions',
+    '--disable-features=AudioServiceOutOfProcess',
+    '--disable-renderer-backgrounding',
+    '--mute-audio',
+    '--no-first-run',
+    '--no-default-browser-check',
+  ],
+  executablePath: process.env.NODE_ENV === "production"
+    ? (process.env.PUPPETEER_EXECUTABLE_PATH || '/usr/bin/google-chrome-stable') // Fallback path if the env var is undefined
+    : puppeteer.executablePath(),
+});
     // Create a new page and setup interception
     const page = await browser.newPage();
     await page.setRequestInterception(true);
@@ -187,8 +184,6 @@ router.get("/fetch-vid", async (req, res) => {
     console.error(error);
     res.status(500).send("An error occurred while fetching the video.");
   }
-  
-  
 });
 
 router.get("/fetch-crsel-media", async (req, res) => {
