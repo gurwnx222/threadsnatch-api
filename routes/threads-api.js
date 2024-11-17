@@ -131,7 +131,7 @@ router.get("/fetch-vid", async (req, res) => {
       }),
     ]);
 
-    const $ = cheerio.load(response.data);
+    const $ = load(response.data);
     const metaTags = {
       ogImageUrl: $('meta[property="og:image"]').attr("content"),
       postTitle: $('meta[property="og:title"]').attr("content"),
@@ -159,11 +159,10 @@ router.get("/fetch-vid", async (req, res) => {
     });
 
     await page.close();
-    await browser.close();
 
     const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
     const $2 = cheerio.load(combinedHTML);
-    const nestedVidTagDiv = $2('.x1xmf6yo').eq(0);
+    const nestedVidTagDiv = $2('.x1xmf6yo').eq(1);
     const videoUrl = nestedVidTagDiv.find('video').attr('src');
 
     if (!videoUrl) {
