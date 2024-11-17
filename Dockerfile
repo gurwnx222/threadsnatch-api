@@ -1,14 +1,8 @@
 # Use Node.js 19 slim version as the base image
 FROM node:19-slim
 
-# Set environment variables to skip Puppeteer's default Chromium download
-ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
-    PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-
-# Install dependencies for Chromium (including fonts and libraries)
+# Install Chromium and its dependencies
 RUN apt-get update && apt-get install -y \
-    wget \
-    ca-certificates \
     chromium \
     fonts-liberation \
     libappindicator3-1 \
