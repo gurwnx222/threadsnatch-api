@@ -103,7 +103,6 @@ router.get("/fetch-vid", async (req, res) => {
     console.log('Meta tags Extracted!!');
     // Launch Puppeteer browser after the Axios request has completed
     const browser = await puppeteer.launch({
-  headless: "new",
       args: [
           "--disable-setuid-sandbox",
           "--no-sandbox",
