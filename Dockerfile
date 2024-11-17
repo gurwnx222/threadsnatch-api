@@ -1,4 +1,4 @@
-FROM ghcr.io/puppeteer/puppeteer:23.8.0
+FROM ghcr.io/puppeteer/puppeteer:^23.8.0
 
 # Set environment variables correctly
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \
