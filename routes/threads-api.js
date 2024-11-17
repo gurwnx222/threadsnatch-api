@@ -6,7 +6,6 @@ import fs from "fs";
 import { promises as fsPromises } from 'fs';
 import path from 'path';
 import axios from "axios";
-import { downloadImage, downloadVideo } from "../threadSaver/threads-download.js";
 import { v4 as uuidv4 } from 'uuid';
 import JSZip from 'jszip';
 import dotenv from "dotenv";
@@ -95,59 +94,15 @@ const imgDeleteTime = 300000 / (1000 * 60);
   }
 });
 
-router.get('/download-img', async (req, res) => {
-  const postUrl = req.query.q;
-
-  if (!fetchedImageUUID) {
-    return res.status(400).json({ error: 'No image has been fetched.' });
-  }
-
-  const imagePath = `./threadsRes/${fetchedImageUUID}.jpg`;
-
-  try {
-    // Check if the image exists using fsPromises
-    await fsPromises.access(imagePath);
-
-    res.set({
-      'Content-Type': 'image/jpeg',
-      'Content-Disposition': `attachment; filename="${fetchedImageUUID}.jpg"`,
-    });
-
-    const imgStream = fs.createReadStream(imagePath);
-    imgStream.pipe(res);
-
-    imgStream.on('close', () => {
-      fsPromises.unlink(imagePath)
-        .then(() => {
-          console.log('Image file deleted successfully!');
-        })
-        .catch((error) => {
-          console.error('Error deleting image file:', error);
-        });
-    });
-
-    imgStream.on('error', (err) => {
-      console.error('Error streaming image:', err);
-      res.status(500).json({ error: 'Error streaming image.' });
-    });
-  } catch (error) {
-    console.error('Error accessing image file:', error);
-    res.status(404).json({
-      error: 'Image not found. Please fetch the image again to download it.',
-    });
-  }
-});
-
 router.get("/fetch-vid", async (req, res) => {
   const postUrl = req.query.q;
-  const directoryPath = "./threadsRes/vid_media/";
 
   if (!postUrl || !postUrl.includes("https://www.threads.net/")) {
     return res.status(400).send("Invalid Threads URL. Please provide a valid URL.");
   }
 
   try {
-    console.log("Scrapping Started !!");
+    console.log("Scraping Started !!");
     // Run axios and Puppeteer in parallel
     const [response, browser] = await Promise.all([
       axios.get(postUrl),
@@ -176,7 +131,7 @@ router.get("/fetch-vid", async (req, res) => {
       }),
     ]);
 
-    const $ = load(response.data);
+    const $ = cheerio.load(response.data);
     const metaTags = {
       ogImageUrl: $('meta[property="og:image"]').attr("content"),
       postTitle: $('meta[property="og:title"]').attr("content"),
@@ -190,7 +145,6 @@ router.get("/fetch-vid", async (req, res) => {
     page.on('request', (request) => {
       if (['image', 'stylesheet', 'font', 'manifest'].includes(request.resourceType())) {
         request.abort();
-        console.log("resouce type is blocked");
       } else {
         request.continue();
       }
@@ -205,23 +159,24 @@ router.get("/fetch-vid", async (req, res) => {
     });
 
     await page.close();
+    await browser.close();
+
     const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
-    const $2 = load(combinedHTML);
-    const nestedVidTagDiv = $2('.x1xmf6yo').eq(1);
+    const $2 = cheerio.load(combinedHTML);
+    const nestedVidTagDiv = $2('.x1xmf6yo').eq(0);
     const videoUrl = nestedVidTagDiv.find('video').attr('src');
+
     if (!videoUrl) {
-      console.log("video not found!");
-      res.json({
+      console.log("Video not found!");
+      return res.json({
         response: "404",
         message: "Video not found.",
-      })
+      });
     }
-    const videoName = `video_${uuidv4()}`;
-    await downloadVideo(videoUrl, videoName, directoryPath);
 
     res.json({
       response: "200",
-      message: "Video downloaded on server successfully!",
+      message: "Video URL extracted successfully!",
       data: {
         postData: {
           postTitle: metaTags.postTitle,
@@ -229,49 +184,15 @@ router.get("/fetch-vid", async (req, res) => {
           postAuthor: metaTags.postAuthor,
         },
         videoData: {
-          videoName: videoName,
-          resolution: "HD",
           videoUrl: videoUrl,
+          resolution: "HD",
         },
-      },
-      downloadVideo: {
-        message: "You can download the video from endpoint /download-vid",
-        url: `/download-vid?q=${postUrl}`,
       },
     });
   } catch (error) {
     console.error(error);
     res.status(500).send("An error occurred while fetching the video.");
   }
-});
-
-router.get('/download-vid', async (req, res) => {
-  if (!fetchedVideoUUID) {
-    return res.status(400).json({ error: 'No video has been fetched.' });
-  }
-
-  const videoPath = `./threadsRes/vid_media/${fetchedVideoUUID}.mp4`;
-  const fileSize = fs.statSync(videoPath).size;
-
-  res.set({
-    'Content-Type': 'video/mp4',
-    'Content-Disposition': 'attachment',
-    'Content-Length': `${fileSize}`,
-    'filename': `"threadsnatch-api_vid_${fetchedVideoUUID}.mp4"`,
-  });
-
-  const vidStream = fs.createReadStream(videoPath);
-  vidStream.pipe(res);
-
-  vidStream.on('close', () => {
-    fs.unlink(videoPath, (error) => {
-      if (error) {
-        console.error('Error deleting video file:', error);
-      } else {
-        console.log('Video file deleted successfully!');
-      }
-    });
-  });
 });
 
 router.get("/fetch-crsel-media", async (req, res) => {

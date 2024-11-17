@@ -1,1 +1,0 @@
-this is an example file to support the empty 'vid_media' folder on GitHub.
