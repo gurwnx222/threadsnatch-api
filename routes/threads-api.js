@@ -145,10 +145,37 @@ router.get("/fetch-vid", async (req, res) => {
   if (!postUrl || !postUrl.includes("https://www.threads.net/")) {
     return res.status(400).send("Invalid Threads URL. Please provide a valid URL.");
   }
-  const response = await axios.get(postUrl);
-    const $ = load(response.data);
 
-    // Extract meta tags using Cheerio
+  try {
+    // Run axios and Puppeteer in parallel
+    const [response, browser] = await Promise.all([
+      axios.get(postUrl),
+      puppeteer.launch({
+        headless: "new",
+        args: [
+          "--disable-setuid-sandbox",
+          "--no-sandbox",
+          "--single-process",
+          "--no-zygote",
+          "--disable-gpu",
+          "--disable-dev-shm-usage",
+          '--ignore-certificate-errors',
+          '--disable-background-networking',
+          '--disable-background-timer-throttling',
+          '--disable-extensions',
+          '--disable-features=AudioServiceOutOfProcess',
+          '--disable-renderer-backgrounding',
+          '--mute-audio',
+          '--no-first-run',
+          '--no-default-browser-check',
+        ],
+        executablePath: process.env.NODE_ENV === "production"
+          ? process.env.PUPPETEER_EXECUTABLE_PATH
+          : puppeteer.executablePath(),
+      }),
+    ]);
+
+    const $ = load(response.data);
     const metaTags = {
       ogImageUrl: $('meta[property="og:image"]').attr("content"),
       postTitle: $('meta[property="og:title"]').attr("content"),
@@ -156,66 +183,41 @@ router.get("/fetch-vid", async (req, res) => {
       postAuthor: $('meta[property="article:author"]').attr("content"),
     };
     console.log('Meta tags Extracted!!');
-  try {    
-    const browser = await puppeteer.launch({
-  headless: "new",
-  args: [
-    "--disable-setuid-sandbox",
-    "--no-sandbox",
-    "--single-process",
-    "--no-zygote",
-    "--disable-gpu",
-    "--disable-dev-shm-usage",
-    '--ignore-certificate-errors',
-    '--disable-background-networking',
-    '--disable-background-timer-throttling',
-    '--disable-extensions',
-    '--disable-features=AudioServiceOutOfProcess',
-    '--disable-renderer-backgrounding',
-    '--mute-audio',
-    '--no-first-run',
-    '--no-default-browser-check',
-  ],
-  executablePath: process.env.NODE_ENV === "production"
-    ? process.env.PUPPETEER_EXECUTABLE_PATH
-    : puppeteer.executablePath(),
-});
-const page = await browser.newPage();
 
-    // Intercept requests to block certain resources
+    const page = await browser.newPage();
     await page.setRequestInterception(true);
     page.on('request', (request) => {
       if (['image', 'stylesheet', 'font', 'manifest'].includes(request.resourceType())) {
         request.abort();
-        console.log('resources blocked:');
       } else {
         request.continue();
       }
     });
-    // Navigate to the post URL
+
     await page.goto(postUrl);
-
-    // Wait for the required selector
     await page.waitForSelector(".x1ja2u2z");
-
-    // Extract video content
     const nestedDivsHTML = await page.evaluate(() => {
       const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
       const targetDivs = nestedDivs.filter(div => div.querySelector('.x1xmf6yo'));
       return targetDivs.map(div => ({ content: div.innerHTML }));
     });
+
+    await page.close();
+    await browser.close();
+
     const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
-const $ = load(combinedHTML);
-    const nestedVidTagDiv = $('.x1xmf6yo').eq(1);
-const videoUrl = nestedVidTagDiv.find('video').attr('src');
- await page.close()
-if (!videoUrl) {
-  console.log("video not found!");
-}
+    const $2 = load(combinedHTML);
+    const nestedVidTagDiv = $2('.x1xmf6yo').eq(1);
+    const videoUrl = nestedVidTagDiv.find('video').attr('src');
+
+    if (!videoUrl) {
+      console.log("video not found!");
+    }
+
     const videoName = `video_${uuidv4()}`;
-    const fullVideoPath = `${directoryPath}${videoName}.mp4`;
     await downloadVideo(videoUrl, videoName, directoryPath);
-    const jsonResponse = {
+
+    res.json({
       response: "200",
       message: "Video downloaded on server successfully!",
       data: {
@@ -234,16 +236,11 @@ if (!videoUrl) {
         message: "You can download the video from endpoint /download-vid",
         url: `/download-vid?q=${postUrl}`,
       },
-    };
-    res.json(jsonResponse);        
+    });
   } catch (error) {
     console.error(error);
-    res.status(500).json({
-      response: "500",
-      message: "An error occurred while fetching the video.",
-      error: error.message,
-    });
-  } 
+    res.status(500).send("An error occurred while fetching the video.");
+  }
 });
 
 router.get('/download-vid', async (req, res) => {
