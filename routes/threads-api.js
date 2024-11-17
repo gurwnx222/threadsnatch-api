@@ -102,7 +102,6 @@ router.get("/fetch-vid", async (req, res) => {
   }
 
   try {
-    console.log("Scraping Started !!");
     // Run axios and Puppeteer in parallel
     const [response, browser] = await Promise.all([
       axios.get(postUrl),
@@ -158,13 +157,10 @@ router.get("/fetch-vid", async (req, res) => {
       return targetDivs.map(div => ({ content: div.innerHTML }));
     });
 
-    await page.close();
-
     const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
     const $2 = load(combinedHTML);
-    const nestedVidTagDiv = $2('.x1xmf6yo').eq(1);
+    const nestedVidTagDiv = $2('.x1xmf6yo').eq(0);
     const videoUrl = nestedVidTagDiv.find('video').attr('src');
-
     if (!videoUrl) {
       console.log("Video not found!");
       return res.json({
@@ -188,6 +184,7 @@ router.get("/fetch-vid", async (req, res) => {
         },
       },
     });
+    await page.close();
   } catch (error) {
     console.error(error);
     res.status(500).send("An error occurred while fetching the video.");
