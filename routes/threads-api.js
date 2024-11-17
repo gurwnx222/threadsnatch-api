@@ -1,29 +1,17 @@
-import puppeteer from "puppeteer-extra";
-import StealthPlugin from "puppeteer-extra-plugin-stealth";
+import puppeteer from "puppeteer-core";
 import express from "express";
 import { load } from "cheerio";
 import fs from "fs";
 import { promises as fsPromises } from 'fs';
 import path from 'path';
 import axios from "axios";
-import { v4 as uuidv4 } from 'uuid';
 import JSZip from 'jszip';
 import dotenv from "dotenv";
 dotenv.config();
-
 const router = express.Router();
-
-// Use the Stealth plugin
-puppeteer.use(StealthPlugin());
-
 // Variable to initiate different UUIDs for different threads
-let fetchedImageUUID = null;
-let fetchedVideoUUID = null;
-let fetchedCrselUUID = null;
-
 // Get the directory path of the current module
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
-
 router.get("/fetch-img", async (req, res) => {
   const postUrl = req.query.q;
   const directoryPath = "./threadsRes/";

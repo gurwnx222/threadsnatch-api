@@ -1,33 +1,13 @@
-# Use Node.js 19 slim version as the base image
-FROM node:19-slim
-
-# Install Chromium and its dependencies
-RUN apt-get update && apt-get install -y \
-    chromium \
-    fonts-liberation \
-    libappindicator3-1 \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libxcomposite1 \
-    libxrandr2 \
-    xdg-utils \
-    --no-install-recommends && \
-    apt-get clean && rm -rf /var/lib/apt/lists/*
-
+FROM ghcr.io/puppeteer/puppeteer:23.8.0
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true \   PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable
 # Set up working directory
 WORKDIR /usr/src/app
-
 # Copy package.json and package-lock.json and install dependencies
 COPY package*.json ./
-RUN npm ci --only=production
-
+RUN npm ci 
 # Copy application code
 COPY . .
-
 # Expose the application port
 EXPOSE 8080
-
 # Run the application
 CMD ["node", "index.js"]
