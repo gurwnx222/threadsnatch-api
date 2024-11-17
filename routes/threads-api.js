@@ -147,6 +147,7 @@ router.get("/fetch-vid", async (req, res) => {
   }
 
   try {
+    console.log("Scrapping Started !!");
     // Run axios and Puppeteer in parallel
     const [response, browser] = await Promise.all([
       axios.get(postUrl),
@@ -189,6 +190,7 @@ router.get("/fetch-vid", async (req, res) => {
     page.on('request', (request) => {
       if (['image', 'stylesheet', 'font', 'manifest'].includes(request.resourceType())) {
         request.abort();
+        console.log("resouce type is blocked");
       } else {
         request.continue();
       }
@@ -203,17 +205,17 @@ router.get("/fetch-vid", async (req, res) => {
     });
 
     await page.close();
-    await browser.close();
-
     const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
     const $2 = load(combinedHTML);
     const nestedVidTagDiv = $2('.x1xmf6yo').eq(1);
     const videoUrl = nestedVidTagDiv.find('video').attr('src');
-
     if (!videoUrl) {
       console.log("video not found!");
+      res.json({
+        response: "404",
+        message: "Video not found.",
+      })
     }
-
     const videoName = `video_${uuidv4()}`;
     await downloadVideo(videoUrl, videoName, directoryPath);
 
