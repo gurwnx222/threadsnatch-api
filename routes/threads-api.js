@@ -103,11 +103,21 @@ router.get("/fetch-vid", async (req, res) => {
     console.log('Meta tags Extracted!!');
     // Launch Puppeteer browser after the Axios request has completed
     const browser = await puppeteer.launch({
-  executablePath: '/usr/bin/google-chrome-stable', // Hardcoded path for testing
-  headless: 'new',
-  args: ['--no-sandbox', '--disable-setuid-sandbox'],
-});
-
+  headless: "new",
+      args: [
+          "--disable-setuid-sandbox",
+          "--no-sandbox",
+          "--single-process",
+          "--no-zygote",
+          "--disable-gpu",
+          "--disable-dev-shm-usage",
+        ],
+        executablePath:
+          process.env.NODE_ENV === "production"
+            ? process.env.PUPPETEER_EXECUTABLE_PATH
+            : puppeteer.executablePath(),
+        headless: true,
+      });
     // Create a new page and setup interception
     const page = await browser.newPage();
     await page.setRequestInterception(true);
