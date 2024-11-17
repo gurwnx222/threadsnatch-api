@@ -104,6 +104,7 @@ router.get("/fetch-vid", async (req, res) => {
   try {
     // Execute Axios request first
     const response = await axios.get(postUrl);
+
     // Extract meta tags from the response
     const $ = load(response.data);
     const metaTags = {
@@ -138,6 +139,7 @@ router.get("/fetch-vid", async (req, res) => {
         ? process.env.PUPPETEER_EXECUTABLE_PATH
         : puppeteer.executablePath(),
     });
+
     // Create a new page and setup interception
     const page = await browser.newPage();
     await page.setRequestInterception(true);
@@ -163,10 +165,10 @@ router.get("/fetch-vid", async (req, res) => {
     // Combine the HTML from nested divs
     const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
     const $2 = load(combinedHTML);
-    const nestedVidTagDiv = $2('.x1xmf6yo').eq(1);
+    const nestedVidTagDiv = $2('.x1xmf6yo').eq(0);
     const videoUrl = nestedVidTagDiv.find('video').attr('src');
-    
-    // Check if video URL is found and return appropriate response
+
+    // Send response as soon as video URL is found
     if (!videoUrl) {
       console.log("Video not found!");
       return res.json({
@@ -176,8 +178,6 @@ router.get("/fetch-vid", async (req, res) => {
     }
 
     console.log("Video fetched !!");
-
-    // Send successful response with extracted data
     res.json({
       response: "200",
       message: "Video URL extracted successfully!",
@@ -193,14 +193,13 @@ router.get("/fetch-vid", async (req, res) => {
         },
       },
     });
+    page.close().catch(err => console.error("Error closing page: ", err));
 
-    // Close the Puppeteer page after task completion
-    await page.close();
-    await browser.close();
 } catch (error) {
     console.error(error);
     res.status(500).send("An error occurred while fetching the video.");
   }
+  
   
 });
 
