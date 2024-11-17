@@ -1,4 +1,4 @@
-import puppeteer from "puppeteer-core";
+import puppeteer from "puppeteer";
 import express from "express";
 import { load } from "cheerio";
 import fs from "fs";
