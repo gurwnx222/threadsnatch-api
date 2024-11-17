@@ -122,9 +122,7 @@ router.get("/fetch-vid", async (req, res) => {
     '--no-default-browser-check',
   ],
   executablePath:
-      process.env.NODE_ENV === "production"
-        ? process.env.PUPPETEER_EXECUTABLE_PATH
-        : puppeteer.executablePath(),
+    puppeteer.executablePath(),
         });
     // Create a new page and setup interception
     const page = await browser.newPage();
