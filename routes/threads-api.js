@@ -161,7 +161,7 @@ router.get("/fetch-vid", async (req, res) => {
     await page.close();
 
     const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
-    const $2 = cheerio.load(combinedHTML);
+    const $2 = load(combinedHTML);
     const nestedVidTagDiv = $2('.x1xmf6yo').eq(1);
     const videoUrl = nestedVidTagDiv.find('video').attr('src');
 
