@@ -103,7 +103,8 @@ router.get("/fetch-vid", async (req, res) => {
     console.log('Meta tags Extracted!!');
     // Launch Puppeteer browser after the Axios request has completed
     const browser = await puppeteer.launch({
-      args: [
+        headless: "new",
+        args: [
           "--disable-setuid-sandbox",
           "--no-sandbox",
           "--single-process",
@@ -115,8 +116,8 @@ router.get("/fetch-vid", async (req, res) => {
           process.env.NODE_ENV === "production"
             ? process.env.PUPPETEER_EXECUTABLE_PATH
             : puppeteer.executablePath(),
-        headless: true,
       });
+
     // Create a new page and setup interception
     const page = await browser.newPage();
     await page.setRequestInterception(true);
