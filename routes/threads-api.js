@@ -25,18 +25,10 @@ router.get("/fetch-img", async (req, res) => {
     const response = await axios.get(postUrl);
     const body = response.data;
     const $ = load(body);
-    
     const ogImageUrl = $('meta[property="og:image"]').attr("content");
     const postTitle = $('meta[property="og:title"]').attr("content");
     const postDescription = $('meta[property="og:description"]').attr("content");
     const postAuthor = $('meta[property="article:author"]').attr("content");
-
-    // Download and save the og:image
-    const imageName = `image_${uuidv4()}`;
-    fetchedImageUUID = imageName; // Store the image name
-    const fullImagePath = `${directoryPath}${fetchedImageUUID}.jpg`;
-    const imagePath = await downloadImage(ogImageUrl, imageName, directoryPath);
-
     // Sending JSON as a response
     const jsonResponse = {
       response: "200",
@@ -50,27 +42,11 @@ router.get("/fetch-img", async (req, res) => {
         imageData: {
           imageName: imageName,
           resolution: "HD",
-          imageSizeKB: (fs.statSync(imagePath).size / 1024).toFixed(2) + "kb",
-          imageSizeMB: ((fs.statSync(imagePath).size / 1024) / 1024).toFixed(2) + "mb",
           imageUrl: ogImageUrl,
         },
       },
-      downloadImage: {
-        message: "You can Download Image from endpoint /download-img",
-        url: `/download-img?q=${postUrl}`,
-      },
     };
-const imgDeleteTime = 300000 / (1000 * 60);
-   await setTimeout(() => {
-    fs.unlink(fullImagePath, (error) => {
-      if (error) {
-        console.error('Error deleting image file:', error);
-      } else {
-        console.log('Image file deleted successfully!');
-      }
-    });
-  }, imgDeleteTime);
-    res.status(200).json(jsonResponse);
+   res.status(200).json(jsonResponse);
   } catch (error) {
     console.error(error);
     const errResponse = {
@@ -185,7 +161,6 @@ router.get("/fetch-vid", async (req, res) => {
 
 router.get("/fetch-crsel-media", async (req, res) => {
   const postUrl = req.query.q;
-
   if (!postUrl || !postUrl.includes('https://www.threads.net/')) {
     return res.status(400).send('Invalid Threads URL. Please provide a valid URL.');
   }
@@ -195,13 +170,22 @@ router.get("/fetch-crsel-media", async (req, res) => {
       const browser = await puppeteer.launch({
         headless: "new",
         args: [
-          "--disable-setuid-sandbox",
-          "--no-sandbox",
-          "--single-process",
-          "--no-zygote",
-          "--disable-gpu",
-          "--disable-dev-shm-usage",
-        ],
+        "--disable-setuid-sandbox",
+        "--no-sandbox",
+        "--single-process",
+        "--no-zygote",
+        "--disable-gpu",
+        "--disable-dev-shm-usage",
+        '--ignore-certificate-errors',
+        '--disable-background-networking',
+        '--disable-background-timer-throttling',
+        '--disable-extensions',
+        '--disable-features=AudioServiceOutOfProcess',
+        '--disable-renderer-backgrounding',
+        '--mute-audio',
+        '--no-first-run',
+        '--no-default-browser-check',
+      ],
         executablePath:
           process.env.NODE_ENV === "production"
             ? process.env.PUPPETEER_EXECUTABLE_PATH
@@ -219,6 +203,7 @@ router.get("/fetch-crsel-media", async (req, res) => {
           req.abort();
         } else {
           req.continue();
+          console.log("Resources Blocked!!");
         }
       });
 
@@ -230,23 +215,18 @@ router.get("/fetch-crsel-media", async (req, res) => {
           postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content"),
         };
       });
-
-      // Wait for the dynamic div to load
+    // Wait for the dynamic div to load
       await page.waitForSelector('div[id^="mount_0_"]');
       // Get the HTML of the entire page
       const pageHTML = await page.content();
       const $ = load(pageHTML);
-
-      // Find the specific div containing the images
+     // Find the specific div containing the images
       const targetDiv = $('.x1xmf6yo').first(); // Use `.first()` to limit to the first matching div
-
       if (!targetDiv.length) {
         throw new Error("Target div not found.");
       }
-
       console.log("Target div found!");
-
-      // Extract and log all <picture> tags within this specific container
+     // Extract and log all <picture> tags within this specific container
       const desiredImages = [];
       targetDiv.find('picture').each((index, element) => {
         const imgTag = $(element).find('img');
@@ -272,25 +252,7 @@ router.get("/fetch-crsel-media", async (req, res) => {
       if (desiredImages.length === 0) {
         console.log("No valid 720w images found.");
       }
-
-      // Zip the images
-      const zip = new JSZip();
-      try {
-        await Promise.all(desiredImages.map(async (imgSrc, i) => {
-          const response = await axios.get(imgSrc, { responseType: 'arraybuffer' });
-          zip.file(`image_${i}.jpg`, response.data, { binary: true });
-          console.log(`Added image_${i}.jpg to zip`);
-        }));
-
-        const zipFilePath = `./threadsRes/crsel_media/crsel_media_${uuidv4()}.zip`;
-        fetchedCrselUUID = zipFilePath; // Store the file path globally for download access
-        
-        const content = await zip.generateAsync({ type: "nodebuffer" });
-        fs.writeFileSync(zipFilePath, content);
-        console.log('Zip file created successfully!');
-
-        // Prepare the JSON response
-        const jsonResponse = {
+  const jsonResponse = {
           response: "200",
           message: "Carousel posts downloaded as a zip file on server successfully!!",
           data: {
@@ -300,38 +262,11 @@ router.get("/fetch-crsel-media", async (req, res) => {
               postAuthor: metaTags.postAuthor,
             },
             crselData: {
-              crselZipFileName: path.basename(zipFilePath),
               resolution: "HD",
-              crselSize: ((fs.statSync(zipFilePath).size / 1024) / 1024) + "mb",
-              crselUrl: "Sorry, No carousel post urls available.",
+              crselImgUrls: `${desiredImages}`,
             },
           },
-          downloadCrsel: {
-            message: "You can Download Carousel Images from endpoint /download-crsel-media on rapid API",
-            url: `/download-crsel-media?q=${postUrl}`,
-          }
         };
-
-     const crselDeleteTime = 300000 / (1000 * 60);
-   await setTimeout(() => {
-    fs.unlink(zipFilePath, (error) => {
-      if (error) {
-        console.error('Error deleting zip file:', error);
-      } else {
-        console.log('Zip file deleted successfully!');
-      }
-    });
-  }, crselDeleteTime);   res.status(200).json(jsonResponse);
-
-      } catch (err) {
-        console.error("Error downloading or zipping images: ", err.message);
-        res.status(500).json({
-          response: "500",
-          message: "Failed to download and zip carousel images.",
-          error: err.message,
-        });
-      }
-
       await browser.close();
     } catch (error) {
       console.error(error);
@@ -345,59 +280,5 @@ router.get("/fetch-crsel-media", async (req, res) => {
 
   await main();
 });
-
-router.get('/download-crsel-media', async (req, res) => {
-  const postUrl = req.query.q;
-  const zipFilePath = fetchedCrselUUID; // Assuming this is the full path
-
-  if (!zipFilePath) {
-    return res.status(400).json({ error: 'No carousel images have been fetched.' });
-  }
-
-  try {
-    // Check if the file exists before proceeding
-    await fsPromises.access(zipFilePath);
-
-    const fileSize = fs.statSync(zipFilePath).size;
-
-    res.set({
-      'Content-Type': 'application/zip',
-      'Content-Disposition': `attachment; filename="${path.basename(zipFilePath)}"`,
-      'Content-Length': `${fileSize}`
-    });
-
-    const zipStream = fs.createReadStream(zipFilePath);
-
-    zipStream.pipe(res);
-
-    zipStream.on('end', () => {
-      // Delete the file after the download is complete
-      fsPromises.unlink(zipFilePath)
-        .then(() => {
-          console.log('Zip file deleted successfully!');
-        })
-        .catch((error) => {
-          console.error('Error deleting zip file:', error);
-        });
-    });
-
-    zipStream.on('error', (err) => {
-      console.error('Error streaming zip file:', err);
-      res.status(500).json({ error: 'Error streaming zip file.' });
-    });
-
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      console.error('File not found:', zipFilePath);
-      res.status(404).json({
-        error: 'The carousel media file you are trying to download does not exist. Please fetch the media again.'
-      });
-    } else {
-      console.error('Error accessing the file:', error);
-      res.status(500).json({ error: 'An error occurred while accessing the file.' });
-    }
-  }
-});
-
 
 export default router
