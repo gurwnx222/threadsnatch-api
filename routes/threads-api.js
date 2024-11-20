@@ -263,10 +263,11 @@ router.get("/fetch-crsel-media", async (req, res) => {
             },
             crselData: {
               resolution: "HD",
-              crselImgUrls: `${desiredImages}`,
+              crselImgUrls: desiredImages,
             },
           },
         };
+      console.log("Json response sent !!");
       await browser.close();
     } catch (error) {
       console.error(error);
