@@ -245,15 +245,11 @@ router.get("/fetch-crsel-media", async (req, res) => {
       targetDiv.find("picture").each((i, element) => {
         const imgTag = $(element).find("img"); // Find img within picture
         const imgSrc = imgTag.attr("src"); // Get the src attribute
-
-        if (imgSrc) {
-          console.log(`Image ${i + 1}: ${imgSrc}`);
-          desiredImages.push(imgSrc);
-        } else {
+        if (!imgSrc){
           console.log(`Image ${i + 1}: No src attribute found`);
         }
+     desiredImages.push(imgSrc);   
       });
-
       // Construct the JSON response
       const jsonResponse = {
         response: "200",
