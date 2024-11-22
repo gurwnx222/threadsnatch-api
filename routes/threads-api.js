@@ -212,8 +212,10 @@ async function main(postUrl) {
         postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content"),
       };
     });
+
     // Wait for the dynamic div to load
     await page.waitForSelector('div[id^="mount_0_"]');
+
     // Extract and log all <picture> tags within this specific container
     const pageHTML = await page.content();
     const $ = load(pageHTML);
@@ -224,18 +226,21 @@ async function main(postUrl) {
       throw new Error("Target div not found.");
     }
     console.log("Target div found!");
-const desiredImages = [];
-  targetDiv.find("picture").each((i, element) => {
-    const imgTag = $(element).find("img"); // Find img within picture
-    const imgSrc = imgTag.attr("src"); // Get the src attribute
 
-    if (imgSrc) {
-      console.log(`Image ${i + 1}: ${imgSrc}`);
-      desiredImages.push(imgSrc);
-    } else {
-      console.log(`Image ${i + 1}: No src attribute found`);
-    }
-  });
+    // Iterate over picture tags and extract image URLs
+    const desiredImages = [];
+    targetDiv.find("picture").each((i, element) => {
+      const imgTag = $(element).find("img"); // Find img within picture
+      const imgSrc = imgTag.attr("src"); // Get the src attribute
+
+      if (imgSrc) {
+        console.log(`Image ${i + 1}: ${imgSrc}`);
+        desiredImages.push(imgSrc);
+      } else {
+        console.log(`Image ${i + 1}: No src attribute found`);
+      }
+    });
+
     // Construct the JSON response
     const jsonResponse = {
       response: "200",
