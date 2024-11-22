@@ -9,8 +9,7 @@ import JSZip from 'jszip';
 import dotenv from "dotenv";
 dotenv.config();
 const router = express.Router();
-// Variable to initiate different UUIDs for different threads
-// Get the directory path of the current module
+
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
 router.get("/fetch-img", async (req, res) => {
   const postUrl = req.query.q;
@@ -57,7 +56,6 @@ router.get("/fetch-img", async (req, res) => {
     res.status(500).json(errResponse);
   }
 });
-
 router.get("/fetch-vid", async (req, res) => {
   const postUrl = req.query.q;
 
@@ -158,128 +156,118 @@ router.get("/fetch-vid", async (req, res) => {
     res.status(500).send("An error occurred while fetching the video.");
   }
 }); 
-
 router.get("/fetch-crsel-media", async (req, res) => {
   const postUrl = req.query.q;
   if (!postUrl || !postUrl.includes('https://www.threads.net/')) {
     return res.status(400).send('Invalid Threads URL. Please provide a valid URL.');
   }
 
-  async function main() {
-    try {
-      const browser = await puppeteer.launch({
-        headless: "new",
-        args: [
+async function main(postUrl) {
+  try {
+    const browser = await puppeteer.launch({
+      headless: "new",
+      args: [
         "--disable-setuid-sandbox",
         "--no-sandbox",
         "--single-process",
         "--no-zygote",
         "--disable-gpu",
         "--disable-dev-shm-usage",
-        '--ignore-certificate-errors',
-        '--disable-background-networking',
-        '--disable-background-timer-throttling',
-        '--disable-extensions',
-        '--disable-features=AudioServiceOutOfProcess',
-        '--disable-renderer-backgrounding',
-        '--mute-audio',
-        '--no-first-run',
-        '--no-default-browser-check',
+        "--ignore-certificate-errors",
+        "--disable-background-networking",
+        "--disable-background-timer-throttling",
+        "--disable-extensions",
+        "--disable-features=AudioServiceOutOfProcess",
+        "--disable-renderer-backgrounding",
+        "--mute-audio",
+        "--no-first-run",
+        "--no-default-browser-check",
       ],
-        executablePath:
-          process.env.NODE_ENV === "production"
-            ? process.env.PUPPETEER_EXECUTABLE_PATH
-            : puppeteer.executablePath(),
-      });
+      executablePath:
+        process.env.NODE_ENV === "production"
+          ? process.env.PUPPETEER_EXECUTABLE_PATH
+          : puppeteer.executablePath(),
+    });
 
-      const page = await browser.newPage();
-      await page.goto(postUrl);
+    const page = await browser.newPage();
+    await page.goto(postUrl);
 
-      // Block unnecessary resources
-      await page.setRequestInterception(true);
-      page.on("request", (req) => {
-        const resourceType = req.resourceType();
-        if (["stylesheet", "image", "font"].includes(resourceType)) {
-          req.abort();
-        } else {
-          req.continue();
-          console.log("Resources Blocked!!");
-        }
-      });
+    // Block unnecessary resources
+    await page.setRequestInterception(true);
+    page.on("request", (req) => {
+      const resourceType = req.resourceType();
+      if (["stylesheet", "image", "font"].includes(resourceType)) {
+        console.log("Resources Blocked!!");
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
 
-      // Extract metadata
-      const metaTags = await page.evaluate(() => {
-        return {
-          postTitle: document.querySelector('meta[property="og:title"]')?.getAttribute("content"),
-          postDescription: document.querySelector('meta[property="og:description"]')?.getAttribute("content"),
-          postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content"),
-        };
-      });
+    // Extract metadata
+    const metaTags = await page.evaluate(() => {
+      return {
+        postTitle: document.querySelector('meta[property="og:title"]')?.getAttribute("content"),
+        postDescription: document.querySelector('meta[property="og:description"]')?.getAttribute("content"),
+        postAuthor: document.querySelector('meta[property="article:author"]')?.getAttribute("content"),
+      };
+    });
     // Wait for the dynamic div to load
-      await page.waitForSelector('div[id^="mount_0_"]');
-      // Get the HTML of the entire page
-      const pageHTML = await page.content();
-      const $ = load(pageHTML);
-     // Find the specific div containing the images
-      const targetDiv = $('.x1xmf6yo').first(); // Use `.first()` to limit to the first matching div
-      if (!targetDiv.length) {
-        throw new Error("Target div not found.");
-      }
-      console.log("Target div found!");
-     // Extract and log all <picture> tags within this specific container
-      const desiredImages = [];
-      targetDiv.find('picture').each((index, element) => {
-        const imgTag = $(element).find('img');
-        const srcset = imgTag.attr('srcset');
+    await page.waitForSelector('div[id^="mount_0_"]');
+    // Extract and log all <picture> tags within this specific container
+    const pageHTML = await page.content();
+    const $ = load(pageHTML);
 
-        if (srcset) {
-          // Extract the 720w image from the srcset
-          const imgSrc = srcset
-            .split(',')
-            .find((src) => src.includes('720w'))
-            ?.trim()
-            .split(' ')[0]; // Get the URL part
-
-          if (imgSrc) {
-            desiredImages.push(imgSrc);
-            console.log(`Image ${index + 1} (720w): images Pushed Successfully`);
-          }
-        } else {
-          console.log(`Image ${index + 1} has no srcset.`);
-        }
-      });
-
-      if (desiredImages.length === 0) {
-        console.log("No valid 720w images found.");
-      }
-  const jsonResponse = {
-          response: "200",
-          message: "Carousel posts downloaded as a zip file on server successfully!!",
-          data: {
-            postData: {
-              postTitle: metaTags.postTitle,
-              postDescription: metaTags.postDescription,
-              postAuthor: metaTags.postAuthor,
-            },
-            crselData: {
-              resolution: "HD",
-              crselImgUrls: desiredImages,
-            },
-          },
-        };
-      console.log("Json response sent !!");
-      await browser.close();
-    } catch (error) {
-      console.error(error);
-      res.status(500).json({
-        response: "500",
-        message: "An error occurred while fetching the Carousel Images.",
-        error: error.message,
-      });
+    // Find the specific div containing the images
+    const targetDiv = $(".x1xmf6yo").first();
+    if (!targetDiv.length) {
+      throw new Error("Target div not found.");
     }
-  }
+    console.log("Target div found!");
+const desiredImages = [];
+  targetDiv.find("picture").each((i, element) => {
+    const imgTag = $(element).find("img"); // Find img within picture
+    const imgSrc = imgTag.attr("src"); // Get the src attribute
 
-  await main();
+    if (imgSrc) {
+      console.log(`Image ${i + 1}: ${imgSrc}`);
+      desiredImages.push(imgSrc);
+    } else {
+      console.log(`Image ${i + 1}: No src attribute found`);
+    }
+  });
+    // Construct the JSON response
+    const jsonResponse = {
+      response: "200",
+      message: "Carousel posts downloaded as a zip file on server successfully!!",
+      data: {
+        postData: {
+          postTitle: metaTags.postTitle,
+          postDescription: metaTags.postDescription,
+          postAuthor: metaTags.postAuthor,
+        },
+        crselData: {
+          resolution: "HD",
+          crselImgUrls: desiredImages,
+        },
+      },
+    };
+
+    console.log("Json response sent !!", jsonResponse);
+
+    await browser.close();
+    return jsonResponse;
+  } catch (error) {
+    console.error("Error:", error.message);
+    return {
+      response: "500",
+      message: "An error occurred while fetching the Carousel Images.",
+      error: error.message,
+    };
+  }
+}
+main();
+  
 });
 
 export default router
