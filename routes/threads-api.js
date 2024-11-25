@@ -116,16 +116,14 @@ router.get("/fetch-vid", async (req, res) => {
     await page.goto(postUrl);
     await page.waitForSelector(".x1ja2u2z");
     // Extract the nested HTML for the video
-    const nestedDivsHTML = await page.evaluate(() => {
+  const nestedDivsHTML = await page.evaluate(() => {
       const nestedDivs = Array.from(document.querySelectorAll('.x1ja2u2z'));
-      const targetDivs = nestedDivs.filter(div => div.querySelector('.x1xmf6yo'));
-      return targetDivs.map(div => ({ content: div.innerHTML }));
+      return nestedDivs.map(div => ({ content: div.innerHTML }));
     });
-  // Combine the HTML from nested divs
-    const combinedHTML = nestedDivsHTML.map(div => div.content).join('');
-    const $2 = load(combinedHTML);
-    const nestedVidTagDiv = $2('.x1xmf6yo').eq(0);
-    const videoUrl = nestedVidTagDiv.find('video').attr('src');
+    
+    const vidNestedDivContent = nestedDivsHTML[15].content;
+   const $2 = load(vidNestedDivContent);
+    const videoUrl = $2('video').attr('src'); 
     // Send response as soon as video URL is found
     if (!videoUrl) {
       console.log("Video not found!");
