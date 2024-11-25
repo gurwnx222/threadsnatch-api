@@ -39,7 +39,6 @@ router.get("/fetch-img", async (req, res) => {
           postAuthor: postAuthor,
         },
         imageData: {
-          imageName: imageName,
           resolution: "HD",
           imageUrl: ogImageUrl,
         },
