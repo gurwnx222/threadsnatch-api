@@ -57,7 +57,6 @@ router.get("/fetch-img", async (req, res) => {
 });
 router.get("/fetch-vid", async (req, res) => {
   const postUrl = req.query.q;
-
   if (!postUrl || !postUrl.includes("https://www.threads.net/")) {
     return res.status(400).send("Invalid Threads URL. Please provide a valid URL.");
   }

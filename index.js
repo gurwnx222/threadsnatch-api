@@ -11,7 +11,7 @@ app.get('/', (req, res) => {
   res.send('ThreadSnatch API is Up and running!');
 });
 
-app.use('/', threadsApiRouter);
+app.use('/api', threadsApiRouter);
 
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
