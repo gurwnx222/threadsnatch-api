@@ -1,8 +1,9 @@
+# Use Node.js 19 slim version as the base image
 FROM node:19-slim
 
 # Install Chromium and its dependencies
 RUN apt-get update && apt-get install -y \
-    chromium-browser \
+    chromium \
     fonts-liberation \
     libappindicator3-1 \
     libasound2 \
@@ -15,10 +16,13 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Set the Chromium executable path as an environment variable
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
 # Set up working directory
 WORKDIR /usr/src/app
 
-# Copy package.json and package-lock.json
+# Copy package.json and package-lock.json and install dependencies
 COPY package*.json ./
 RUN npm ci --only=production
 
@@ -26,7 +30,7 @@ RUN npm ci --only=production
 COPY . .
 
 # Expose the application port
-EXPOSE 8080
+EXPOSE 8000
 
 # Run the application
 CMD ["node", "index.js"]
