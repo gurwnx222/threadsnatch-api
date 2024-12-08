@@ -16,6 +16,9 @@ RUN apt-get update && apt-get install -y \
     --no-install-recommends && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Set the Chromium executable path as an environment variable
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
+
 # Set up working directory
 WORKDIR /usr/src/app
 
