@@ -89,5 +89,9 @@ start = "typescript-language-server --stdio"
 run = ["sh", "-c", "node index.js"]
 
 [[ports]]
+localPort = 8000
+externalPort = 8000
+
+[[ports]]
 localPort = 8080
 externalPort = 80

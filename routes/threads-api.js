@@ -152,7 +152,6 @@ router.get("/fetch-vid", async (req, res) => {
     res.status(500).send("An error occurred while fetching the video.");
   }
 }); 
-
 router.get("/fetch-crsel-media", async (req, res) => {
   const postUrl = req.query.q;
 
