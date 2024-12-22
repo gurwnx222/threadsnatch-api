@@ -84,7 +84,6 @@ router.get("/fetch-vid", async (req, res) => {
         "--single-process",
         "--no-zygote",
         "--disable-gpu",
-        "--disable-dev-shm-usage",
         '--ignore-certificate-errors',
         '--disable-background-networking',
         '--disable-background-timer-throttling',
