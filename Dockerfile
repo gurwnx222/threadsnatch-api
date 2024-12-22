@@ -5,16 +5,11 @@ FROM node:19-slim
 RUN apt-get update && apt-get install -y \
     chromium \
     fonts-liberation \
-    libappindicator3-1 \
-    libasound2 \
-    libatk-bridge2.0-0 \
-    libcups2 \
-    libdbus-1-3 \
-    libxcomposite1 \
-    libxrandr2 \
-    xdg-utils \
     --no-install-recommends && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
+
+# Increase /dev/shm size to avoid slow scraping
+RUN mount -t tmpfs -o size=256m tmpfs /dev/shm
 
 # Set the Chromium executable path as an environment variable
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
