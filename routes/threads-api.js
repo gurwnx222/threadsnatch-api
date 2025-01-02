@@ -5,7 +5,6 @@ import fs from "fs";
 import { promises as fsPromises } from 'fs';
 import path from 'path';
 import axios from "axios";
-import JSZip from 'jszip';
 import dotenv from "dotenv";
 dotenv.config();
 const router = express.Router();
