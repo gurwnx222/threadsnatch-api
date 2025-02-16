@@ -1,0 +1,35 @@
+# .choreo/component.yaml
+# Schema version as per Choreo’s configuration spec
+schemaVersion: 1.1
+
+# Define service endpoint details (if your Puppeteer container exposes an API)
+endpoints:
+  - name: puppeteer-service
+    displayName: Puppeteer Service
+    service:
+      # The base path for your API (adjust if needed)
+      basePath: /
+      # The port on which your container listens (e.g., 3000)
+      port: 3000
+    # Specify the type of traffic; here we assume RESTful interaction
+    type: REST
+    # Visibility settings; adjust to 'Project', 'Organization', or 'Public'
+    networkVisibilities:
+      - Public
+
+# If your service does not need to expose endpoints, you can omit the above section
+
+# Specify any outgoing dependencies if needed (none in this sample)
+dependencies: {}
+
+# Runtime configuration section to inject environment variables
+configuration:
+  env:
+    # Example: Set Node.js environment to production
+    - name: NODE_ENV
+      value: production
+    # Example: Puppeteer may require a path to the Chromium executable;
+    # adjust the value as per your container’s setup.
+    - name: PUPPETEER_EXECUTABLE_PATH
+      value: "/usr/bin/chromium-browser"
+      
