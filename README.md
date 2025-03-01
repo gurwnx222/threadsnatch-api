@@ -12,31 +12,31 @@ This API allows you to download images, videos, and carousel posts from Meta Thr
 ## Endpoints -
 
 ### Fetch Image -
-**• GET** `/fetch-img?q=<MetaThreadsPostUrl>`
+**• GET** `api/fetch-img?q=<MetaThreadsPostUrl>`
      • Fetches and downloads an image from the specified Meta Threads post URL in the Server.
 
 ### • Download Image -
-**• GET** `/download-img`
+**• GET** `api/download-img`
      • Downloads the last fetched image to the Client.
 
 ### Fetch Video -
-**• GET** `/fetch-vid?q=<MetaThreadsPostUrl>`
+**• GET** `api/fetch-vid?q=<MetaThreadsPostUrl>`
     •Fetches and downloads a video from the specified Meta Threads post URL.
 
 ### Download Video -
 
-**• GET** `/download-vid`
+**• GET** `api/download-vid`
    • Downloads the last fetched video.
    
    *• Note: Video fetching can take up to 20-30 seconds depending on the network connection.*
      
 ### Fetch Carousel Images -
-**• GET** `/fetch-crsel-imgs?q=<MetaThreadsPostUrl>`
+**• GET** `api/fetch-crsel-imgs?q=<MetaThreadsPostUrl>`
     • Fetches images from a carousel post and downloads them as a ZIP file.
    
 ### Download Carousel Images -
 
-**• GET** `/download-crsel-imgs`
+**• GET** `api/download-crsel-imgs`
    • Downloads the last fetched carousel images as a ZIP file.
     
    *• Note: Carousel fetching can take up to 20-30 seconds depending on the network connection.*    
