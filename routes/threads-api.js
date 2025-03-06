@@ -1,4 +1,5 @@
-import puppeteer from "puppeteer";
+import puppeteer from "puppeteer-core";
+import chromium from "@sparticuz/chromium"; 
 import express from "express";
 import { load } from "cheerio";
 import fs from "fs";
@@ -93,9 +94,8 @@ router.get("/fetch-vid", async (req, res) => {
         '--no-first-run',
         '--no-default-browser-check',
       ],
-      executablePath: process.env.NODE_ENV === "production"
-        ? process.env.PUPPETEER_EXECUTABLE_PATH
-        : puppeteer.executablePath(),
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
     });
 
     // Create a new page and setup interception
