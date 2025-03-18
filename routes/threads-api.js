@@ -11,6 +11,7 @@ dotenv.config();
 const router = express.Router();
 
 const __dirname = path.dirname(new URL(import.meta.url).pathname);
+
 router.get("/fetch-img", async (req, res) => {
   const postUrl = req.query.q;
   const directoryPath = "./threadsRes/";
@@ -55,6 +56,7 @@ router.get("/fetch-img", async (req, res) => {
     res.status(500).json(errResponse);
   }
 });
+
 router.get("/fetch-vid", async (req, res) => {
   const postUrl = req.query.q;
   if (!postUrl || !postUrl.includes("https://www.threads.net/")) {
