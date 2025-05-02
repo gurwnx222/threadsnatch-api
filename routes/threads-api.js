@@ -225,26 +225,23 @@ router.get("/fetch-crsel-media", async (req, res) => {
       await page.waitForSelector('div[id^="mount_0_"]');
 
       // Extract and log all <picture> tags within this specific container
-      const pageHTML = await page.content();
-      const $ = load(pageHTML);
-
-      // Find the specific div containing the images
-      const targetDiv = $(".x1xmf6yo").first();
-      if (!targetDiv.length) {
-        throw new Error("Target div not found.");
-      }
-      console.log("Target div found!");
-
-      // Iterate over picture tags and extract image URLs
-      const desiredImages = [];
+    const pageHTML = await page.content();
+    const $ = await load(pageHTML);
+    // Find the specific div containing the images
+    const targetDiv = await $(".x1xmf6yo");
+    if (!targetDiv.length) {
+      throw new Error("Target div not found.");
+    }
+    console.log("Target div found!");
+    const desiredImages = [];
       targetDiv.find("picture").each((i, element) => {
         const imgTag = $(element).find("img"); // Find img within picture
         const imgSrc = imgTag.attr("src"); // Get the src attribute
         if (!imgSrc){
           console.log(`Image ${i + 1}: No src attribute found`);
         }
-     desiredImages.push(imgSrc);   
-      });
+     desiredImages.push(imgSrc);
+      });     
       // Construct the JSON response
       const jsonResponse = {
         response: "200",
